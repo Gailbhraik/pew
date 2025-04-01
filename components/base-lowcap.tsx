@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, ExternalLink, RefreshCw, ArrowUpDown, TrendingUp, TrendingDown } from "lucide-react"
+import { Search, ExternalLink, RefreshCw, ArrowUpDown, TrendingUp, TrendingDown, Wallet, Plus, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
@@ -12,6 +12,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Crypto } from "@/components/crypto-tracker"
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 // Liste des cryptomonnaies majeures sur Base
 const BASE_MAJOR_TOKENS = [
@@ -260,7 +271,14 @@ export function BaseLowcap() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
   const [marketCapFilter, setMarketCapFilter] = useState<"all" | "large" | "medium" | "small" | "micro" | "nano" | "pico">("all")
   const [platformFilter, setPlatformFilter] = useState<"all" | "Standard">("all")
-  const [activeTab, setActiveTab] = useState<"browse" | "search">("browse")
+  const [activeTab, setActiveTab] = useState<"browse" | "search" | "portfolio" | "explorer">("browse")
+  const [walletConnected, setWalletConnected] = useState(false)
+  const [walletAddress, setWalletAddress] = useState("")
+  const [portfolio, setPortfolio] = useState<{token: Crypto, amount: number}[]>([])
+  const [explorerSearch, setExplorerSearch] = useState("")
+  const [explorerNetwork, setExplorerNetwork] = useState<"solana" | "base">("solana")
+  const [explorerResults, setExplorerResults] = useState<any>(null)
+  const [explorerLoading, setExplorerLoading] = useState(false)
   const { toast } = useToast()
 
   const itemsPerPage = 12
@@ -469,6 +487,241 @@ export function BaseLowcap() {
     setCurrentPage(page)
   }
 
+  // Load portfolio from local storage
+  useEffect(() => {
+    if (walletConnected && walletAddress) {
+      const savedPortfolio = localStorage.getItem(`portfolio-${walletAddress}`)
+      if (savedPortfolio) {
+        try {
+          setPortfolio(JSON.parse(savedPortfolio))
+        } catch (error) {
+          console.error("Failed to parse portfolio data:", error)
+        }
+      }
+    }
+  }, [walletConnected, walletAddress])
+  
+  // Save portfolio to local storage
+  useEffect(() => {
+    if (walletConnected && walletAddress && portfolio.length > 0) {
+      localStorage.setItem(`portfolio-${walletAddress}`, JSON.stringify(portfolio))
+    }
+  }, [portfolio, walletConnected, walletAddress])
+  
+  // Connect wallet function
+  const connectWallet = async () => {
+    // Simulating wallet connection for demo purposes
+    setLoading(true)
+    
+    try {
+      // In a real app, you would use a proper wallet connection library
+      // like @solana/wallet-adapter for Solana or ethers.js for Base/Ethereum
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Generate a fake wallet address for demo
+      const fakeAddress = explorerNetwork === "solana"
+        ? `${Array.from({length: 32}, () => "123456789abcdef"[Math.floor(Math.random() * 16)]).join("")}`
+        : `0x${Array.from({length: 40}, () => "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("")}`
+      
+      setWalletAddress(fakeAddress)
+      setWalletConnected(true)
+      
+      toast({
+        title: "Wallet Connected",
+        description: "You have successfully connected your wallet",
+      })
+    } catch (error) {
+      console.error("Error connecting wallet:", error)
+      toast({
+        title: "Connection failed",
+        description: "Failed to connect your wallet. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  // Disconnect wallet
+  const disconnectWallet = () => {
+    setWalletConnected(false)
+    setWalletAddress("")
+    // In a real application, you would also disconnect from the wallet provider
+  }
+  
+  // Add token to portfolio
+  const addToPortfolio = (token: Crypto, amount: number) => {
+    if (!walletConnected) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet first to manage your portfolio",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    // Check if token already exists in portfolio
+    const existingIndex = portfolio.findIndex(item => item.token.id === token.id)
+    
+    if (existingIndex >= 0) {
+      // Update existing token
+      const updatedPortfolio = [...portfolio]
+      updatedPortfolio[existingIndex] = {
+        ...updatedPortfolio[existingIndex],
+        amount: updatedPortfolio[existingIndex].amount + amount
+      }
+      setPortfolio(updatedPortfolio)
+    } else {
+      // Add new token
+      setPortfolio([...portfolio, { token, amount }])
+    }
+    
+    toast({
+      title: "Added to portfolio",
+      description: `Added ${amount} ${token.symbol.toUpperCase()} to your portfolio`,
+    })
+  }
+  
+  // Remove token from portfolio
+  const removeFromPortfolio = (tokenId: string) => {
+    setPortfolio(portfolio.filter(item => item.token.id !== tokenId))
+    
+    toast({
+      title: "Removed from portfolio",
+      description: "Token removed from your portfolio",
+    })
+  }
+  
+  // Calculate portfolio value
+  const calculatePortfolioValue = () => {
+    return portfolio.reduce((total, item) => {
+      return total + (item.token.current_price * item.amount)
+    }, 0)
+  }
+
+  // Search using blockchain explorers (Solscan/Basescan)
+  const searchExplorer = async () => {
+    if (!explorerSearch.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a wallet address or token address",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    setExplorerLoading(true)
+    
+    try {
+      // In a real app, you would use the actual APIs for Solscan and Basescan
+      // This is a mock implementation for demonstration purposes
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // Generate mock results based on the network
+      if (explorerNetwork === "solana") {
+        // Mock Solscan results
+        const isSolToken = explorerSearch.length === 44 || explorerSearch.length === 43
+        const isSolWallet = explorerSearch.length >= 32 && explorerSearch.length <= 44
+        
+        if (isSolToken) {
+          // Mock token data for Solana
+          setExplorerResults({
+            type: "token",
+            network: "solana",
+            name: `SOL${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+            symbol: `SOL${Math.random().toString(36).substring(2, 4).toUpperCase()}`,
+            address: explorerSearch,
+            decimals: 9,
+            supply: Math.random() * 1000000000,
+            holders: Math.floor(Math.random() * 10000),
+            price: Math.random() * 10,
+            transactions: Math.floor(Math.random() * 100000),
+            website: Math.random() > 0.5 ? "https://example.com" : null,
+            twitter: Math.random() > 0.5 ? "https://twitter.com/example" : null,
+          })
+        } else if (isSolWallet) {
+          // Mock wallet data for Solana
+          const tokenCount = Math.floor(Math.random() * 10) + 1
+          const tokens = Array.from({length: tokenCount}, (_, i) => ({
+            name: `SOL${Math.random().toString(36).substring(2, 5).toUpperCase()}`,
+            symbol: `S${Math.random().toString(36).substring(2, 4).toUpperCase()}`,
+            amount: Math.random() * 1000,
+            value: Math.random() * 10000,
+          }))
+          
+          setExplorerResults({
+            type: "wallet",
+            network: "solana",
+            address: explorerSearch,
+            balance: Math.random() * 100,
+            value: Math.random() * 10000,
+            tokens: tokens,
+            transactions: Math.floor(Math.random() * 1000),
+            nfts: Math.floor(Math.random() * 20),
+          })
+        } else {
+          throw new Error("Invalid Solana address format")
+        }
+      } else {
+        // Mock Basescan results
+        const isBaseToken = explorerSearch.startsWith("0x") && explorerSearch.length === 42
+        const isBaseWallet = explorerSearch.startsWith("0x") && explorerSearch.length === 42
+        
+        if (isBaseToken) {
+          // Mock token data for Base
+          setExplorerResults({
+            type: "token",
+            network: "base",
+            name: `BASE${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+            symbol: `B${Math.random().toString(36).substring(2, 4).toUpperCase()}`,
+            address: explorerSearch,
+            decimals: 18,
+            supply: Math.random() * 1000000000,
+            holders: Math.floor(Math.random() * 5000),
+            price: Math.random() * 5,
+            transactions: Math.floor(Math.random() * 50000),
+            website: Math.random() > 0.5 ? "https://example.com" : null,
+            twitter: Math.random() > 0.5 ? "https://twitter.com/example" : null,
+          })
+        } else if (isBaseWallet) {
+          // Mock wallet data for Base
+          const tokenCount = Math.floor(Math.random() * 8) + 1
+          const tokens = Array.from({length: tokenCount}, (_, i) => ({
+            name: `BASE${Math.random().toString(36).substring(2, 5).toUpperCase()}`,
+            symbol: `B${Math.random().toString(36).substring(2, 4).toUpperCase()}`,
+            amount: Math.random() * 1000,
+            value: Math.random() * 5000,
+          }))
+          
+          setExplorerResults({
+            type: "wallet",
+            network: "base",
+            address: explorerSearch,
+            balance: Math.random() * 50,
+            value: Math.random() * 5000,
+            tokens: tokens,
+            transactions: Math.floor(Math.random() * 500),
+            nfts: Math.floor(Math.random() * 10),
+          })
+        } else {
+          throw new Error("Invalid Base address format")
+        }
+      }
+    } catch (error) {
+      console.error("Explorer search error:", error)
+      setExplorerResults(null)
+      toast({
+        title: "Search failed",
+        description: error instanceof Error ? error.message : "Failed to retrieve data. Please check the address and try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setExplorerLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-4">
@@ -531,11 +784,13 @@ export function BaseLowcap() {
       <Tabs
         defaultValue="browse"
         value={activeTab}
-        onValueChange={(value) => setActiveTab(value as "browse" | "search")}
+        onValueChange={(value) => setActiveTab(value as "browse" | "search" | "portfolio" | "explorer")}
       >
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="browse">Browse All Tokens</TabsTrigger>
           <TabsTrigger value="search">Search by Contract</TabsTrigger>
+          <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+          <TabsTrigger value="explorer">Blockchain Explorer</TabsTrigger>
         </TabsList>
 
         <TabsContent value="browse" className="space-y-4 mt-4">
@@ -599,18 +854,70 @@ export function BaseLowcap() {
                   <div className="mt-3 pt-3 border-t border-blue-100 dark:border-blue-900">
                     <div className="text-xs text-muted-foreground flex items-center justify-between">
                       <span className="truncate max-w-[180px]">{crypto.contract_address}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-blue-600 hover:text-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900"
-                        onClick={() => {
-                          setSearchTerm(crypto.contract_address || "")
-                          setSelectedCrypto(crypto)
-                          setActiveTab("search")
-                        }}
-                      >
-                        <Search className="h-3 w-3" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900"
+                          onClick={() => {
+                            setSearchTerm(crypto.contract_address || "")
+                            setSelectedCrypto(crypto)
+                            setActiveTab("search")
+                          }}
+                          title="View Details"
+                        >
+                          <Search className="h-3.5 w-3.5" />
+                        </Button>
+                        
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-green-600 hover:text-green-800 hover:bg-green-100 dark:hover:bg-green-900"
+                          onClick={() => {
+                            if (walletConnected) {
+                              // Open a dialog to ask for amount
+                              const dialog = document.createElement('dialog')
+                              dialog.innerHTML = `
+                                <div class="p-4">
+                                  <h3 class="font-bold mb-2">Add ${crypto.name} to Portfolio</h3>
+                                  <input type="number" min="0" step="0.01" placeholder="Enter amount" class="border p-2 w-full mb-2">
+                                  <div class="flex justify-end gap-2">
+                                    <button id="cancel" class="px-3 py-1 bg-gray-200 rounded">Cancel</button>
+                                    <button id="confirm" class="px-3 py-1 bg-blue-600 text-white rounded">Add</button>
+                                  </div>
+                                </div>
+                              `
+                              document.body.appendChild(dialog)
+                              dialog.showModal()
+                              
+                              // Handle dialog actions
+                              dialog.querySelector('#cancel')?.addEventListener('click', () => {
+                                dialog.close()
+                                document.body.removeChild(dialog)
+                              })
+                              
+                              dialog.querySelector('#confirm')?.addEventListener('click', () => {
+                                const input = dialog.querySelector('input')
+                                const amount = parseFloat(input?.value || '0')
+                                if (amount > 0) {
+                                  addToPortfolio(crypto, amount)
+                                }
+                                dialog.close()
+                                document.body.removeChild(dialog)
+                              })
+                            } else {
+                              toast({
+                                title: "Wallet not connected",
+                                description: "Please connect your wallet to add tokens to your portfolio",
+                                variant: "destructive",
+                              })
+                            }
+                          }}
+                          title="Add to Portfolio"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -721,6 +1028,68 @@ export function BaseLowcap() {
                       <span>Basescan</span>
                     </a>
                   </Button>
+                  
+                  {walletConnected && (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="ml-2">
+                          <Plus className="h-3 w-3 mr-1" />
+                          <span>Add to Portfolio</span>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Add to Portfolio</DialogTitle>
+                          <DialogDescription>
+                            Enter the amount of {selectedCrypto.name} ({selectedCrypto.symbol.toUpperCase()}) you want to add to your portfolio.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="amount" className="text-right">
+                              Amount
+                            </Label>
+                            <Input
+                              id="amount"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="Enter amount"
+                              className="col-span-3"
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <DialogClose asChild>
+                            <Button type="button" variant="secondary">
+                              Cancel
+                            </Button>
+                          </DialogClose>
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              const amountInput = document.getElementById('amount') as HTMLInputElement
+                              const amount = parseFloat(amountInput?.value || '0')
+                              if (amount > 0) {
+                                addToPortfolio(selectedCrypto, amount)
+                                // Close the dialog
+                                const closeButton = document.querySelector('[data-state="open"] button[data-state="closed"]') as HTMLButtonElement
+                                if (closeButton) closeButton.click()
+                              } else {
+                                toast({
+                                  title: "Invalid amount",
+                                  description: "Please enter a valid amount greater than 0",
+                                  variant: "destructive",
+                                })
+                              }
+                            }}
+                          >
+                            Add
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="p-4">
@@ -771,6 +1140,306 @@ export function BaseLowcap() {
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="portfolio" className="space-y-4 mt-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold">Your Portfolio</h2>
+            {!walletConnected ? (
+              <Button onClick={connectWallet} className="bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
+                {loading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Wallet className="h-4 w-4 mr-2" />}
+                Connect Wallet
+              </Button>
+            ) : (
+              <div className="flex gap-2 items-center">
+                <div className="text-sm bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full">
+                  <span className="font-medium">{walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}</span>
+                </div>
+                <Button variant="outline" size="sm" onClick={disconnectWallet}>Disconnect</Button>
+              </div>
+            )}
+          </div>
+          
+          {walletConnected ? (
+            <div className="space-y-4">
+              {portfolio.length > 0 ? (
+                <>
+                  <Card className="border-blue-200 dark:border-blue-800">
+                    <CardHeader className="bg-blue-100/50 dark:bg-blue-900/20">
+                      <CardTitle className="text-lg">Portfolio Overview</CardTitle>
+                      <CardDescription>
+                        Total value: ${calculatePortfolioValue().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="space-y-4">
+                        {portfolio.map((item) => (
+                          <div key={item.token.id} className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-blue-200 dark:bg-blue-800 rounded-full flex items-center justify-center text-sm font-bold">
+                                {item.token.symbol.substring(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="font-medium">{item.token.name}</div>
+                                <div className="text-xs text-muted-foreground">{item.amount.toLocaleString()} {item.token.symbol.toUpperCase()}</div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <div className="font-medium">${(item.token.current_price * item.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+                                onClick={() => removeFromPortfolio(item.token.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                    <h3 className="font-medium mb-2">Add tokens from your browsing</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Browse tokens and add them to your portfolio by selecting them and clicking "Add to Portfolio".</p>
+                  </div>
+                </>
+              ) : (
+                <div className="bg-blue-50 dark:bg-blue-950 p-8 rounded-lg text-center">
+                  <Wallet className="h-12 w-12 mx-auto mb-4 text-blue-600" />
+                  <h3 className="text-lg font-medium mb-2">Your portfolio is empty</h3>
+                  <p className="text-muted-foreground mb-4">Browse tokens and add them to start building your portfolio</p>
+                  <Button onClick={() => setActiveTab("browse")} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    Browse Tokens
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-blue-50 dark:bg-blue-950 p-8 rounded-lg text-center">
+              <Wallet className="h-12 w-12 mx-auto mb-4 text-blue-600" />
+              <h3 className="text-lg font-medium mb-2">Connect your wallet</h3>
+              <p className="text-muted-foreground mb-4">Connect your wallet to manage your portfolio</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="explorer" className="space-y-4 mt-4">
+          <Card className="border-blue-200 dark:border-blue-800">
+            <CardHeader className="bg-blue-100/50 dark:bg-blue-900/20">
+              <CardTitle className="text-lg">Blockchain Explorer</CardTitle>
+              <CardDescription>
+                Search for wallet addresses or token contracts on Solana and Base blockchains
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="space-y-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Enter wallet or token address..."
+                        className="pl-8 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
+                        value={explorerSearch}
+                        onChange={(e) => setExplorerSearch(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && searchExplorer()}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Select
+                      value={explorerNetwork}
+                      onValueChange={(value: "solana" | "base") => setExplorerNetwork(value)}
+                    >
+                      <SelectTrigger className="w-[150px]">
+                        <SelectValue placeholder="Network" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="solana">Solana (Solscan)</SelectItem>
+                        <SelectItem value="base">Base (Basescan)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={searchExplorer} 
+                      className="bg-blue-600 hover:bg-blue-700 text-white" 
+                      disabled={explorerLoading}
+                    >
+                      {explorerLoading ? (
+                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Search className="h-4 w-4 mr-2" />
+                      )}
+                      Search
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {explorerLoading && (
+            <div className="space-y-4 mt-6">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Skeleton className="h-40 w-full" />
+                <Skeleton className="h-40 w-full" />
+              </div>
+            </div>
+          )}
+
+          {explorerResults && !explorerLoading && (
+            <Card className="border-blue-200 dark:border-blue-800">
+              <CardHeader className="bg-blue-100/50 dark:bg-blue-900/20">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>
+                      {explorerResults.type === "token" ? "Token Details" : "Wallet Details"}
+                    </CardTitle>
+                    <CardDescription>
+                      {explorerResults.network === "solana" ? "Solana Blockchain" : "Base Blockchain"}
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" asChild>
+                    <a
+                      href={
+                        explorerResults.network === "solana"
+                          ? `https://solscan.io/${explorerResults.type === "token" ? "token" : "account"}/${explorerResults.address}`
+                          : `https://basescan.org/${explorerResults.type === "token" ? "token" : "address"}/${explorerResults.address}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      <span>{explorerResults.network === "solana" ? "View on Solscan" : "View on Basescan"}</span>
+                    </a>
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                {explorerResults.type === "token" ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Token Information</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Name</span>
+                          <span className="font-medium">{explorerResults.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Symbol</span>
+                          <span className="font-medium">{explorerResults.symbol}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Decimals</span>
+                          <span className="font-medium">{explorerResults.decimals}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total Supply</span>
+                          <span className="font-medium">{explorerResults.supply.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Holders</span>
+                          <span className="font-medium">{explorerResults.holders.toLocaleString()}</span>
+                        </div>
+                        {explorerResults.price && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Price</span>
+                            <span className="font-medium">${explorerResults.price.toFixed(6)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Contract Information</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-muted-foreground">Token Address</span>
+                          <code className="text-xs bg-blue-50 dark:bg-blue-950 p-2 rounded break-all">
+                            {explorerResults.address}
+                          </code>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Transactions</span>
+                          <span className="font-medium">{explorerResults.transactions.toLocaleString()}</span>
+                        </div>
+                        {explorerResults.website && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Website</span>
+                            <a href={explorerResults.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                              {explorerResults.website.replace("https://", "")}
+                            </a>
+                          </div>
+                        )}
+                        {explorerResults.twitter && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Twitter</span>
+                            <a href={explorerResults.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                              {explorerResults.twitter.split("/").pop()}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-1">Balance</div>
+                        <div className="text-lg font-bold">
+                          {explorerResults.balance.toLocaleString()} {explorerResults.network === "solana" ? "SOL" : "ETH"}
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          ${explorerResults.value.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-1">Tokens</div>
+                        <div className="text-lg font-bold">{explorerResults.tokens.length}</div>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                        <div className="text-sm text-muted-foreground mb-1">Transactions</div>
+                        <div className="text-lg font-bold">{explorerResults.transactions.toLocaleString()}</div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium mb-3">Token Holdings</h3>
+                      <div className="space-y-3">
+                        {explorerResults.tokens.map((token: any, index: number) => (
+                          <div key={index} className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-blue-200 dark:bg-blue-800 rounded-full flex items-center justify-center text-xs font-bold">
+                                {token.symbol.substring(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="font-medium">{token.name}</div>
+                                <div className="text-xs text-muted-foreground">{token.amount.toLocaleString()} {token.symbol}</div>
+                              </div>
+                            </div>
+                            <div className="text-sm font-medium">${token.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-muted-foreground">Wallet Address</span>
+                      <code className="text-xs bg-blue-50 dark:bg-blue-950 p-2 rounded break-all">
+                        {explorerResults.address}
+                      </code>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
