@@ -13,6 +13,8 @@ import { ArrowLeft } from "lucide-react"
 import type { Crypto } from "@/components/crypto-tracker"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CryptoConverter } from "@/components/crypto-converter"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { TrendingUp, TrendingDown } from "lucide-react"
 
 export function LowcapExplorer() {
   const [activeTab, setActiveTab] = useState("solana")
@@ -190,8 +192,8 @@ export function LowcapExplorer() {
         <div className="flex items-center gap-4">
           <ParticleLogo />
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Saperlipocrypto Lowcap Explorer</h1>
-            <p className="text-muted-foreground mt-1">Discover low market cap gems on Solana and Base</p>
+            <h1 className="text-3xl font-bold tracking-tight">Saperlipocrypto Blockchain Explorer</h1>
+            <p className="text-muted-foreground mt-1">Explore all cryptocurrencies on Solana and Base networks</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -208,38 +210,147 @@ export function LowcapExplorer() {
         </div>
       </header>
 
-      <div className="space-y-6">
-        <Tabs defaultValue="solana" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger
-              value="solana"
-              className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-900 dark:data-[state=active]:bg-purple-900 dark:data-[state=active]:text-purple-100"
-            >
-              Solana Lowcaps
-            </TabsTrigger>
-            <TabsTrigger
-              value="base"
-              className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-100"
-            >
-              Base Lowcaps
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="solana" className="mt-6">
-            <SolanaLowcap />
-          </TabsContent>
-          <TabsContent value="base" className="mt-6">
-            <BaseLowcap />
-          </TabsContent>
-        </Tabs>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Market Overview</CardTitle>
+            <CardDescription>Latest market statistics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-[250px]" />
+                <Skeleton className="h-4 w-[200px]" />
+                <Skeleton className="h-4 w-[150px]" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Total Market Cap</span>
+                  <span className="font-medium">
+                    ${(allCryptos.reduce((sum, crypto) => sum + crypto.market_cap, 0) / 1e9).toFixed(2)}B
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">24h Volume</span>
+                  <span className="font-medium">
+                    ${(allCryptos.reduce((sum, crypto) => sum + crypto.total_volume, 0) / 1e9).toFixed(2)}B
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Active Cryptocurrencies</span>
+                  <span className="font-medium">{allCryptos.length}</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Gainers</CardTitle>
+            <CardDescription>Best performing assets in 24h</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-[250px]" />
+                <Skeleton className="h-4 w-[200px]" />
+                <Skeleton className="h-4 w-[150px]" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {allCryptos
+                  .sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h)
+                  .slice(0, 3)
+                  .map((crypto) => (
+                    <div key={crypto.id} className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <img src={crypto.image} alt={crypto.name} className="w-6 h-6" />
+                        <span className="font-medium">{crypto.symbol.toUpperCase()}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-green-500">
+                        <TrendingUp className="h-4 w-4" />
+                        <span>+{crypto.price_change_percentage_24h.toFixed(2)}%</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Losers</CardTitle>
+            <CardDescription>Worst performing assets in 24h</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-[250px]" />
+                <Skeleton className="h-4 w-[200px]" />
+                <Skeleton className="h-4 w-[150px]" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {allCryptos
+                  .sort((a, b) => a.price_change_percentage_24h - b.price_change_percentage_24h)
+                  .slice(0, 3)
+                  .map((crypto) => (
+                    <div key={crypto.id} className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <img src={crypto.image} alt={crypto.name} className="w-6 h-6" />
+                        <span className="font-medium">{crypto.symbol.toUpperCase()}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-red-500">
+                        <TrendingDown className="h-4 w-4" />
+                        <span>{crypto.price_change_percentage_24h.toFixed(2)}%</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-      
-      {/* Section de convertisseur de crypto (déplacée en bas) */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">Convertisseur de Cryptomonnaies</h2>
-        <div className="bg-card rounded-lg border shadow-sm p-6">
-          {loading ? <Skeleton className="h-[400px] w-full" /> : <CryptoConverter cryptos={allCryptos} />}
-        </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle>Cryptocurrency Explorer</CardTitle>
+            <CardDescription>Browse and search for cryptocurrencies on different networks</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="solana">Solana Network</TabsTrigger>
+                <TabsTrigger value="base">Base Network</TabsTrigger>
+              </TabsList>
+              <TabsContent value="solana">
+                <SolanaLowcap />
+              </TabsContent>
+              <TabsContent value="base">
+                <BaseLowcap />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Crypto Converter</CardTitle>
+            <CardDescription>Convert between cryptocurrencies</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CryptoConverter cryptos={allCryptos} />
+          </CardContent>
+        </Card>
       </div>
+
+      <footer className="text-center text-sm text-muted-foreground">
+        <p>Data is simulated for demonstration purposes.</p>
+      </footer>
     </div>
   )
 }

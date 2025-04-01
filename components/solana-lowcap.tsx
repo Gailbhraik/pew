@@ -13,6 +13,44 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Crypto } from "@/components/crypto-tracker"
 
+// Liste des cryptomonnaies majeures sur Solana
+const SOLANA_MAJOR_TOKENS = [
+  {
+    id: "solana",
+    name: "Solana",
+    symbol: "sol",
+    contract_address: "So11111111111111111111111111111111111111112",
+    blockchain: "solana",
+    is_memecoin: false,
+    market_cap: 60000000000,
+    current_price: 150,
+    platform: "Standard",
+  },
+  {
+    id: "raydium",
+    name: "Raydium",
+    symbol: "ray",
+    contract_address: "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+    blockchain: "solana",
+    is_memecoin: false,
+    market_cap: 4500000000,
+    current_price: 2.5,
+    platform: "Standard",
+  },
+  {
+    id: "bonk",
+    name: "Bonk",
+    symbol: "bonk",
+    contract_address: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+    blockchain: "solana",
+    is_memecoin: true,
+    market_cap: 1200000000,
+    current_price: 0.000012,
+    platform: "Standard",
+  },
+  // ... autres tokens majeurs ...
+]
+
 // Liste des memecoins lowcap sur Solana (liste initiale)
 const SOLANA_LOWCAPS_INITIAL = [
   {
@@ -161,12 +199,12 @@ const SOLANA_LOWCAPS_INITIAL = [
   },
 ]
 
-// Générer une liste plus complète de lowcaps Solana (simulation)
-const generateSolanaLowcaps = (count: number) => {
-  const lowcaps = [...SOLANA_LOWCAPS_INITIAL]
+// Générer une liste plus complète de cryptomonnaies Solana (simulation)
+const generateSolanaTokens = (count: number) => {
+  const tokens = [...SOLANA_MAJOR_TOKENS, ...SOLANA_LOWCAPS_INITIAL]
 
   // Noms aléatoires pour les tokens Solana
-  const prefixes = ["Sol", "Luna", "Star", "Moon", "Cosmic", "Galaxy", "Nova", "Astro", "Space", "Orbit"]
+  const prefixes = ["Sol", "S", "Luna", "Star", "Sun", "Moon", "Degen", "Ape", "Frog", "Meme"]
   const suffixes = ["Doge", "Cat", "Pepe", "Shib", "Floki", "Elon", "Moon", "Rocket", "Lambo", "Inu", "Coin", "Token"]
 
   for (let i = 0; i < count; i++) {
@@ -175,22 +213,17 @@ const generateSolanaLowcaps = (count: number) => {
     const name = `${prefix}${suffix}`
     const symbol = name.substring(0, 4).toLowerCase()
 
-    // Générer une adresse de contrat Solana aléatoire
-    const contractAddress = Array.from(
-      { length: 44 },
-      () => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 62)],
-    ).join("")
+    // Générer une adresse de contrat Solana aléatoire (format Base58)
+    const contractAddress =
+      Array.from({ length: 44 }, () => "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"[Math.floor(Math.random() * 58)]).join("")
 
-    // Générer un prix aléatoire (très bas pour les lowcaps)
-    const price = Math.random() * 0.001
+    // Générer un prix aléatoire
+    const price = Math.random() * 100
 
-    // Générer une capitalisation aléatoire (entre 100K et 10M pour les lowcaps)
-    const marketCap = price * (Math.random() * 9900000 + 100000)
+    // Générer une capitalisation aléatoire (entre 100K et 1B)
+    const marketCap = price * (Math.random() * 990000000 + 100000)
 
-    // 20% de chance d'être un coin de pump.fun
-    const isPumpFun = Math.random() > 0.8
-
-    lowcaps.push({
+    tokens.push({
       id: `${symbol}-${i}`,
       name,
       symbol,
@@ -199,46 +232,48 @@ const generateSolanaLowcaps = (count: number) => {
       is_memecoin: Math.random() > 0.3, // 70% de chance d'être un memecoin
       market_cap: marketCap,
       current_price: price,
-      platform: isPumpFun ? "pump.fun" : "Standard",
+      platform: Math.random() > 0.7 ? "pump.fun" : "Standard", // 30% de chance d'être sur pump.fun
     })
   }
 
-  return lowcaps
+  return tokens
 }
 
-// Générer une liste complète de lowcaps Solana
-const SOLANA_LOWCAPS = generateSolanaLowcaps(95) // 100 tokens au total
+// Générer une liste complète de tokens Solana
+const SOLANA_TOKENS = generateSolanaTokens(95) // 100 tokens au total
 
 export function SolanaLowcap() {
   const [searchTerm, setSearchTerm] = useState("")
   const [nameSearchTerm, setNameSearchTerm] = useState("")
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<Crypto[]>([])
-  const [allLowcaps, setAllLowcaps] = useState<Crypto[]>([])
-  const [filteredLowcaps, setFilteredLowcaps] = useState<Crypto[]>([])
+  const [allTokens, setAllTokens] = useState<Crypto[]>([])
+  const [filteredTokens, setFilteredTokens] = useState<Crypto[]>([])
   const [selectedCrypto, setSelectedCrypto] = useState<Crypto | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [sortBy, setSortBy] = useState<"market_cap" | "price" | "name">("market_cap")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
-  const [marketCapFilter, setMarketCapFilter] = useState<"all" | "micro" | "nano" | "pico">("all")
-  const [platformFilter, setPlatformFilter] = useState<"all" | "pump.fun" | "Standard">("all")
+  const [marketCapFilter, setMarketCapFilter] = useState<"all" | "large" | "medium" | "small" | "micro" | "nano" | "pico">("all")
+  const [platformFilter, setPlatformFilter] = useState<"all" | "Standard" | "pump.fun">("all")
   const [activeTab, setActiveTab] = useState<"browse" | "search">("browse")
   const { toast } = useToast()
 
   const itemsPerPage = 12
 
+  const ONE_BILLION = 1000000000
+  const ONE_HUNDRED_MILLION = 100000000
   const TEN_MILLION = 10000000
   const ONE_MILLION = 1000000
   const ONE_HUNDRED_THOUSAND = 100000
 
-  // Convertir les lowcaps en objets Crypto complets
+  // Convertir les tokens en objets Crypto complets
   useEffect(() => {
-    const convertedLowcaps = SOLANA_LOWCAPS.map((crypto) => {
+    const convertedTokens = SOLANA_TOKENS.map((crypto) => {
       return {
         ...crypto,
         id: crypto.id,
         image: `/placeholder.svg?height=50&width=50&text=${crypto.symbol.toUpperCase()}`,
-        market_cap_rank: Math.floor(Math.random() * 2000) + 1000,
+        market_cap_rank: Math.floor(Math.random() * 2000) + 1,
         fully_diluted_valuation: crypto.market_cap * 2,
         total_volume: crypto.market_cap * 0.2,
         high_24h: crypto.current_price * 1.2,
@@ -261,22 +296,33 @@ export function SolanaLowcap() {
       } as Crypto
     })
 
-    setAllLowcaps(convertedLowcaps)
-    applyFilters(convertedLowcaps)
+    setAllTokens(convertedTokens)
+    applyFilters(convertedTokens)
   }, [])
 
   // Appliquer les filtres et le tri
-  const applyFilters = (cryptos = allLowcaps) => {
+  const applyFilters = (cryptos = allTokens) => {
     let filtered = [...cryptos]
 
     // Filtre par capitalisation
     if (marketCapFilter !== "all") {
       filtered = filtered.filter((crypto) => {
-        if (marketCapFilter === "micro") return crypto.market_cap < TEN_MILLION && crypto.market_cap >= ONE_MILLION
-        if (marketCapFilter === "nano")
-          return crypto.market_cap < ONE_MILLION && crypto.market_cap >= ONE_HUNDRED_THOUSAND
-        if (marketCapFilter === "pico") return crypto.market_cap < ONE_HUNDRED_THOUSAND
-        return true
+        switch (marketCapFilter) {
+          case "large":
+            return crypto.market_cap >= ONE_BILLION
+          case "medium":
+            return crypto.market_cap >= ONE_HUNDRED_MILLION && crypto.market_cap < ONE_BILLION
+          case "small":
+            return crypto.market_cap >= TEN_MILLION && crypto.market_cap < ONE_HUNDRED_MILLION
+          case "micro":
+            return crypto.market_cap >= ONE_MILLION && crypto.market_cap < TEN_MILLION
+          case "nano":
+            return crypto.market_cap >= ONE_HUNDRED_THOUSAND && crypto.market_cap < ONE_MILLION
+          case "pico":
+            return crypto.market_cap < ONE_HUNDRED_THOUSAND
+          default:
+            return true
+        }
       })
     }
 
@@ -307,7 +353,7 @@ export function SolanaLowcap() {
       return sortDirection === "desc" ? nameB.localeCompare(nameA) : nameA.localeCompare(nameB)
     })
 
-    setFilteredLowcaps(filtered)
+    setFilteredTokens(filtered)
     setCurrentPage(1) // Réinitialiser à la première page après filtrage
   }
 
@@ -332,7 +378,7 @@ export function SolanaLowcap() {
     try {
       // Recherche dans notre liste de lowcaps Solana
       const searchTermLower = searchTerm.toLowerCase()
-      const foundInList = allLowcaps.find((crypto) => crypto.contract_address?.toLowerCase() === searchTermLower)
+      const foundInList = allTokens.find((crypto) => crypto.contract_address?.toLowerCase() === searchTermLower)
 
       if (foundInList) {
         setResults([foundInList])
@@ -415,8 +461,8 @@ export function SolanaLowcap() {
   }
 
   // Pagination
-  const totalPages = Math.ceil(filteredLowcaps.length / itemsPerPage)
-  const currentItems = filteredLowcaps.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  const totalPages = Math.ceil(filteredTokens.length / itemsPerPage)
+  const currentItems = filteredTokens.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   const goToPage = (page: number) => {
     if (page < 1) page = 1
@@ -425,7 +471,59 @@ export function SolanaLowcap() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1">
+          <Input
+            placeholder="Search by name or symbol..."
+            value={nameSearchTerm}
+            onChange={(e) => setNameSearchTerm(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Select value={marketCapFilter} onValueChange={setMarketCapFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Market Cap" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Market Caps</SelectItem>
+              <SelectItem value="large">Large Cap (>$1B)</SelectItem>
+              <SelectItem value="medium">Medium Cap ($100M-$1B)</SelectItem>
+              <SelectItem value="small">Small Cap ($10M-$100M)</SelectItem>
+              <SelectItem value="micro">Micro Cap ($1M-$10M)</SelectItem>
+              <SelectItem value="nano">Nano Cap ($100K-$1M)</SelectItem>
+              <SelectItem value="pico">Pico Cap (<$100K)</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={platformFilter} onValueChange={setPlatformFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Platform" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Platforms</SelectItem>
+              <SelectItem value="Standard">Standard</SelectItem>
+              <SelectItem value="pump.fun">pump.fun</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}>
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                Sort by: {sortBy === "market_cap" ? "Market Cap" : sortBy === "price" ? "Price" : "Name"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setSortBy("market_cap")}>Market Cap</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("price")}>Price</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("name")}>Name</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
       <Tabs
         defaultValue="browse"
         value={activeTab}
@@ -437,106 +535,6 @@ export function SolanaLowcap() {
         </TabsList>
 
         <TabsContent value="browse" className="space-y-4 mt-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search by name or symbol..."
-                className="pl-8 bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800"
-                value={nameSearchTerm}
-                onChange={(e) => setNameSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Select value={marketCapFilter} onValueChange={(value) => setMarketCapFilter(value as any)}>
-                <SelectTrigger className="w-[180px] bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800">
-                  <SelectValue placeholder="Market Cap" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Market Caps</SelectItem>
-                  <SelectItem value="micro">Micro Cap ({"<$10M"})</SelectItem>
-                  <SelectItem value="nano">Nano Cap ({"<$1M"})</SelectItem>
-                  <SelectItem value="pico">Pico Cap ({"<$100K"})</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={platformFilter} onValueChange={(value) => setPlatformFilter(value as any)}>
-                <SelectTrigger className="w-[180px] bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800">
-                  <SelectValue placeholder="Platform" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Platforms</SelectItem>
-                  <SelectItem value="pump.fun">pump.fun</SelectItem>
-                  <SelectItem value="Standard">Standard</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="gap-1 bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800"
-                  >
-                    <ArrowUpDown className="h-4 w-4" />
-                    Sort
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy("market_cap")
-                      setSortDirection("desc")
-                    }}
-                  >
-                    Market Cap (High to Low)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy("market_cap")
-                      setSortDirection("asc")
-                    }}
-                  >
-                    Market Cap (Low to High)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy("price")
-                      setSortDirection("desc")
-                    }}
-                  >
-                    Price (High to Low)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy("price")
-                      setSortDirection("asc")
-                    }}
-                  >
-                    Price (Low to High)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy("name")
-                      setSortDirection("asc")
-                    }}
-                  >
-                    Name (A-Z)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy("name")
-                      setSortDirection("desc")
-                    }}
-                  >
-                    Name (Z-A)
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {currentItems.map((crypto) => (
               <Card
@@ -656,7 +654,7 @@ export function SolanaLowcap() {
             </div>
           )}
 
-          {filteredLowcaps.length === 0 && !loading && (
+          {filteredTokens.length === 0 && !loading && (
             <div className="text-center p-8 bg-purple-50 dark:bg-purple-950 rounded-lg">
               <p>No cryptocurrencies found matching your criteria.</p>
             </div>
