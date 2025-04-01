@@ -28,7 +28,7 @@ export function ParticleLogo() {
       <div className="h-full w-full">
         <Particles
           id="crypto-logo-particles"
-          particlesInit={particlesInit}
+          init={particlesInit}
           options={{
             fullScreen: { enable: false },
             particles: {
