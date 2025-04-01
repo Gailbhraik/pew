@@ -83,11 +83,18 @@ const config: Config = {
   				to: {
   					height: '0'
   				}
-  			}
+  			},
+            'colorShift': {
+                '0%': { filter: 'hue-rotate(0deg)' },
+                '100%': { filter: 'hue-rotate(360deg)' }
+            }
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+            'spin-slow': 'spin 8s linear infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'colorShift': 'colorShift 8s infinite alternate'
   		}
   	}
   },
