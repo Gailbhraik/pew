@@ -201,6 +201,26 @@ const generateBaseLowcaps = (count: number) => {
       market_cap: marketCap,
       current_price: price,
       platform: "Standard",
+      image: `/placeholder.svg?height=50&width=50&text=${symbol.toUpperCase()}`,
+      market_cap_rank: Math.floor(Math.random() * 2000) + 1000,
+      fully_diluted_valuation: marketCap * 2,
+      total_volume: marketCap * 0.2,
+      high_24h: price * 1.2,
+      low_24h: price * 0.8,
+      price_change_24h: (Math.random() - 0.5) * price * 0.1,
+      price_change_percentage_24h: (Math.random() - 0.5) * 15,
+      market_cap_change_24h: (Math.random() - 0.5) * marketCap * 0.05,
+      market_cap_change_percentage_24h: (Math.random() - 0.5) * 5,
+      circulating_supply: marketCap / price,
+      total_supply: (marketCap / price) * 1.5,
+      max_supply: (marketCap / price) * 2,
+      ath: price * 2,
+      ath_change_percentage: -30,
+      ath_date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+      atl: price * 0.5,
+      atl_change_percentage: 100,
+      atl_date: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
+      last_updated: new Date().toISOString(),
     })
   }
 
@@ -233,35 +253,9 @@ export function BaseLowcap() {
 
   // Convertir les lowcaps en objets Crypto complets
   useEffect(() => {
-    const convertedLowcaps = BASE_LOWCAPS.map((crypto) => {
-      return {
-        ...crypto,
-        id: crypto.id,
-        image: `/placeholder.svg?height=50&width=50&text=${crypto.symbol.toUpperCase()}`,
-        market_cap_rank: Math.floor(Math.random() * 2000) + 1000,
-        fully_diluted_valuation: crypto.market_cap * 2,
-        total_volume: crypto.market_cap * 0.2,
-        high_24h: crypto.current_price * 1.2,
-        low_24h: crypto.current_price * 0.8,
-        price_change_24h: (Math.random() - 0.5) * crypto.current_price * 0.1,
-        price_change_percentage_24h: (Math.random() - 0.5) * 15,
-        market_cap_change_24h: (Math.random() - 0.5) * crypto.market_cap * 0.05,
-        market_cap_change_percentage_24h: (Math.random() - 0.5) * 5,
-        circulating_supply: crypto.market_cap / crypto.current_price,
-        total_supply: (crypto.market_cap / crypto.current_price) * 1.5,
-        max_supply: (crypto.market_cap / crypto.current_price) * 2,
-        ath: crypto.current_price * 2,
-        ath_change_percentage: -30,
-        ath_date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        atl: crypto.current_price * 0.5,
-        atl_change_percentage: 100,
-        atl_date: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-        last_updated: new Date().toISOString(),
-      } as Crypto
-    })
-
-    setAllLowcaps(convertedLowcaps)
-    applyFilters(convertedLowcaps)
+    // Pas besoin de conversion car tous les champs sont déjà ajoutés lors de la génération
+    setAllLowcaps(BASE_LOWCAPS)
+    applyFilters(BASE_LOWCAPS)
   }, [])
 
   // Appliquer les filtres et le tri
