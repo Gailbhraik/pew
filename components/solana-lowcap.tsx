@@ -482,21 +482,27 @@ export function SolanaLowcap() {
           />
         </div>
         <div className="flex gap-2">
-          <Select value={marketCapFilter} onValueChange={setMarketCapFilter}>
+          <Select 
+            value={marketCapFilter} 
+            onValueChange={(value: "all" | "large" | "medium" | "small" | "micro" | "nano" | "pico") => setMarketCapFilter(value)}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Market Cap" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Market Caps</SelectItem>
-              <SelectItem value="large">Large Cap (>$1B)</SelectItem>
+              <SelectItem value="large">Large Cap (&gt;$1B)</SelectItem>
               <SelectItem value="medium">Medium Cap ($100M-$1B)</SelectItem>
               <SelectItem value="small">Small Cap ($10M-$100M)</SelectItem>
               <SelectItem value="micro">Micro Cap ($1M-$10M)</SelectItem>
               <SelectItem value="nano">Nano Cap ($100K-$1M)</SelectItem>
-              <SelectItem value="pico">Pico Cap (<$100K)</SelectItem>
+              <SelectItem value="pico">Pico Cap (&lt;$100K)</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={platformFilter} onValueChange={setPlatformFilter}>
+          <Select 
+            value={platformFilter} 
+            onValueChange={(value: "all" | "Standard" | "pump.fun") => setPlatformFilter(value)}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Platform" />
             </SelectTrigger>
@@ -717,7 +723,7 @@ export function SolanaLowcap() {
                             variant="outline"
                             className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
                           >
-                            Memecoin
+                            Meme
                           </Badge>
                         )}
                         {selectedCrypto.platform === "pump.fun" && (
