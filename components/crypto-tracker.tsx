@@ -161,7 +161,7 @@ export default function CryptoTracker() {
       const data = await response.json()
 
       // Ajouter la propriété blockchain pour les cryptos standard
-      const processedData = data.map((crypto) => ({
+      const processedData = data.map((crypto: any) => ({
         ...crypto,
         blockchain: "ethereum", // Par défaut, on considère que ce sont des tokens Ethereum
         is_memecoin: isMemeToken(crypto.id, crypto.name, crypto.symbol),
