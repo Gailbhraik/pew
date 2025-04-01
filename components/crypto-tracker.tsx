@@ -385,11 +385,6 @@ export default function CryptoTracker() {
         </div>
       </header>
 
-      {/* Section de convertisseur de crypto */}
-      <div className="mb-8">
-        <CryptoConverter cryptos={allCryptos} />
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-card rounded-lg border shadow-sm p-4">
@@ -533,6 +528,14 @@ export default function CryptoTracker() {
               <TradingView cryptos={allCryptos} />
             </TabsContent>
           </Tabs>
+        </div>
+      </div>
+      
+      {/* Section de convertisseur de crypto (déplacée en bas) */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">Convertisseur de Cryptomonnaies</h2>
+        <div className="bg-card rounded-lg border shadow-sm p-6">
+          <CryptoConverter cryptos={allCryptos} />
         </div>
       </div>
     </div>

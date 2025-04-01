@@ -208,11 +208,6 @@ export function LowcapExplorer() {
         </div>
       </header>
 
-      {/* Section de convertisseur de crypto */}
-      <div className="mb-8">
-        {loading ? <Skeleton className="h-[400px] w-full" /> : <CryptoConverter cryptos={allCryptos} />}
-      </div>
-
       <div className="space-y-6">
         <Tabs defaultValue="solana" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
@@ -236,6 +231,14 @@ export function LowcapExplorer() {
             <BaseLowcap />
           </TabsContent>
         </Tabs>
+      </div>
+      
+      {/* Section de convertisseur de crypto (déplacée en bas) */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">Convertisseur de Cryptomonnaies</h2>
+        <div className="bg-card rounded-lg border shadow-sm p-6">
+          {loading ? <Skeleton className="h-[400px] w-full" /> : <CryptoConverter cryptos={allCryptos} />}
+        </div>
       </div>
     </div>
   )
