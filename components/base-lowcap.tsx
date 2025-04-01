@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Search, ExternalLink, RefreshCw, ArrowUpDown, TrendingUp, TrendingDown, Wallet, Plus, Trash2, MessageCircle, X, Send } from "lucide-react"
+import { Search, ExternalLink, RefreshCw, ArrowUpDown, TrendingUp, TrendingDown, Wallet, Plus, Trash2, MessageCircle, X, Send, Check } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -292,6 +292,9 @@ export function BaseLowcap() {
   const [chatMessages, setChatMessages] = useState<Message[]>([])
   const [messageText, setMessageText] = useState("")
   const [userName, setUserName] = useState("")
+  const [editingUsername, setEditingUsername] = useState(false)
+  const [newUsername, setNewUsername] = useState("")
+  const [unreadCount, setUnreadCount] = useState(0)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   const itemsPerPage = 12
@@ -747,6 +750,14 @@ export function BaseLowcap() {
           timestamp: new Date(msg.timestamp)
         }))
         setChatMessages(messagesWithDates)
+        
+        // Set the last viewed timestamp
+        const lastViewedTimestamp = localStorage.getItem("chat-last-viewed")
+        if (lastViewedTimestamp) {
+          const lastViewed = new Date(lastViewedTimestamp)
+          const newMessages = messagesWithDates.filter(msg => new Date(msg.timestamp) > lastViewed)
+          setUnreadCount(newMessages.length)
+        }
       } catch (error) {
         console.error("Failed to parse chat messages:", error)
       }
@@ -763,12 +774,44 @@ export function BaseLowcap() {
     }
   }, [])
   
-  // Save chat messages to local storage
+  // Effect to manage unread messages
+  useEffect(() => {
+    if (chatOpen) {
+      // Mark all messages as read when chat is opened
+      setUnreadCount(0)
+      localStorage.setItem("chat-last-viewed", new Date().toISOString())
+    }
+  }, [chatOpen])
+  
+  // Save chat messages to local storage and handle notifications
   useEffect(() => {
     if (chatMessages.length > 0) {
       localStorage.setItem("chat-messages", JSON.stringify(chatMessages))
+      
+      // Handle unread count for new messages
+      if (!chatOpen) {
+        const lastMessage = chatMessages[chatMessages.length - 1]
+        if (lastMessage.sender !== userName) {
+          setUnreadCount(prev => prev + 1)
+          
+          // Show notification if browser supports it
+          if ("Notification" in window && Notification.permission === "granted" && lastMessage.sender !== userName) {
+            new Notification("New message in crypto chat", {
+              body: `${lastMessage.sender}: ${lastMessage.text.substring(0, 50)}${lastMessage.text.length > 50 ? '...' : ''}`,
+              icon: "/placeholder.svg?height=40&width=40"
+            })
+          }
+        }
+      }
     }
-  }, [chatMessages])
+  }, [chatMessages, chatOpen, userName])
+  
+  // Request notification permission
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission !== "denied") {
+      Notification.requestPermission()
+    }
+  }, [])
   
   // Scroll to bottom of chat when new messages are added
   useEffect(() => {
@@ -788,13 +831,123 @@ export function BaseLowcap() {
       timestamp: new Date()
     }
     
-    setChatMessages([...chatMessages, newMessage])
+    try {
+      // Get existing messages from localStorage in case another user added messages
+      const savedMessages = localStorage.getItem("chat-messages")
+      let existingMessages: Message[] = []
+      
+      if (savedMessages) {
+        try {
+          existingMessages = JSON.parse(savedMessages)
+        } catch (error) {
+          console.error("Failed to parse existing messages:", error)
+        }
+      }
+      
+      // Combine existing messages with the new one, avoid duplicates
+      const existingIds = new Set(existingMessages.map(msg => msg.id))
+      const currentMessages = chatMessages.filter(msg => !existingIds.has(msg.id))
+      const updatedMessages = [...existingMessages, ...currentMessages, newMessage]
+      
+      // Sort by timestamp to ensure correct order
+      updatedMessages.sort((a, b) => {
+        const dateA = new Date(a.timestamp)
+        const dateB = new Date(b.timestamp)
+        return dateA.getTime() - dateB.getTime()
+      })
+      
+      setChatMessages(updatedMessages)
+      localStorage.setItem("chat-messages", JSON.stringify(updatedMessages))
+    } catch (error) {
+      console.error("Error saving message:", error)
+      // Fallback to simpler approach if the optimized one fails
+      const updatedMessages = [...chatMessages, newMessage]
+      setChatMessages(updatedMessages)
+      localStorage.setItem("chat-messages", JSON.stringify(updatedMessages))
+    }
+    
     setMessageText("")
+  }
+  
+  // Periodically check for new messages from other users
+  useEffect(() => {
+    const checkForNewMessages = () => {
+      try {
+        const savedMessages = localStorage.getItem("chat-messages")
+        if (savedMessages) {
+          const parsedMessages = JSON.parse(savedMessages) as Message[]
+          
+          // Only update if there are more messages than we currently have
+          if (parsedMessages.length > chatMessages.length) {
+            // Convert timestamps to Date objects
+            const messagesWithDates = parsedMessages.map(msg => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp)
+            }))
+            
+            setChatMessages(messagesWithDates)
+            
+            // Update unread count if chat is closed
+            if (!chatOpen) {
+              const lastViewedTimestamp = localStorage.getItem("chat-last-viewed")
+              if (lastViewedTimestamp) {
+                const lastViewed = new Date(lastViewedTimestamp)
+                const newMessages = messagesWithDates.filter(
+                  msg => new Date(msg.timestamp) > lastViewed && msg.sender !== userName
+                )
+                setUnreadCount(newMessages.length)
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking for new messages:", error)
+      }
+    }
+    
+    // Check for new messages every 3 seconds
+    const interval = setInterval(checkForNewMessages, 3000)
+    
+    return () => {
+      clearInterval(interval)
+    }
+  }, [chatMessages.length, chatOpen, userName])
+  
+  // Clear chat function
+  const clearChat = () => {
+    if (confirm("Are you sure you want to clear all chat messages? This affects all users.")) {
+      setChatMessages([])
+      localStorage.removeItem("chat-messages")
+      localStorage.setItem("chat-last-viewed", new Date().toISOString())
+      setUnreadCount(0)
+      
+      toast({
+        title: "Chat cleared",
+        description: "All messages have been cleared",
+      })
+    }
   }
   
   // Format time for chat messages
   const formatMessageTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Change username
+  const changeUsername = () => {
+    if (!newUsername.trim() || newUsername.trim() === userName) {
+      setEditingUsername(false)
+      return
+    }
+    
+    setUserName(newUsername.trim())
+    localStorage.setItem("chat-username", newUsername.trim())
+    setEditingUsername(false)
+    
+    toast({
+      title: "Username changed",
+      description: `Your username has been updated to ${newUsername.trim()}`,
+    })
   }
 
   return (
@@ -1523,23 +1676,73 @@ export function BaseLowcap() {
 
       {/* Chat toggle button */}
       <Button
-        className="fixed right-4 bottom-4 rounded-full p-3 shadow-md bg-blue-600 hover:bg-blue-700 text-white"
+        className="fixed right-4 bottom-4 rounded-full w-12 h-12 shadow-lg bg-blue-600 hover:bg-blue-700 text-white z-50"
         onClick={() => setChatOpen(!chatOpen)}
       >
-        {chatOpen ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
+        {chatOpen ? (
+          <X className="h-5 w-5" />
+        ) : (
+          <div className="relative">
+            <MessageCircle className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </div>
+        )}
       </Button>
       
       {/* Chat panel */}
       <div 
-        className={`fixed right-4 bottom-16 w-80 bg-white dark:bg-gray-950 rounded-lg shadow-xl transition-transform duration-300 border border-blue-200 dark:border-blue-800 ${
-          chatOpen ? 'transform translate-y-0 opacity-100' : 'transform translate-y-8 opacity-0 pointer-events-none'
+        className={`fixed right-4 bottom-16 w-80 bg-white dark:bg-gray-950 rounded-lg shadow-xl border border-blue-200 dark:border-blue-800 z-50 ${
+          chatOpen ? 'block' : 'hidden'
         }`}
       >
         <div className="p-3 border-b border-blue-200 dark:border-blue-800 bg-blue-100/50 dark:bg-blue-900/20 rounded-t-lg flex justify-between items-center">
-          <h3 className="font-medium">Community Chat</h3>
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
-            {chatMessages.length} messages
-          </Badge>
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium">Community Chat</h3>
+            {!editingUsername ? (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2 text-xs"
+                onClick={() => {
+                  setNewUsername(userName)
+                  setEditingUsername(true)
+                }}
+              >
+                @{userName}
+              </Button>
+            ) : (
+              <div className="flex items-center gap-1">
+                <Input
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && changeUsername()}
+                  className="h-6 text-xs w-24"
+                  autoFocus
+                />
+                <Button size="sm" className="h-6 w-6 p-0" onClick={changeUsername}>
+                  <Check className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+              title="Clear chat"
+              onClick={clearChat}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+            <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+              {chatMessages.length}
+            </Badge>
+          </div>
         </div>
         <div className="p-3 max-h-80 overflow-y-auto flex flex-col space-y-3">
           {chatMessages.length === 0 ? (
@@ -1558,9 +1761,9 @@ export function BaseLowcap() {
               >
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-xs font-medium">{message.sender}</span>
-                  <span className="text-xs text-muted-foreground">{formatMessageTime(message.timestamp)}</span>
+                  <span className="text-xs text-muted-foreground">{formatMessageTime(new Date(message.timestamp))}</span>
                 </div>
-                <p className="text-sm">{message.text}</p>
+                <p className="text-sm whitespace-normal break-words">{message.text}</p>
               </div>
             ))
           )}
