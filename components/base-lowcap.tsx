@@ -13,6 +13,44 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Crypto } from "@/components/crypto-tracker"
 
+// Liste des cryptomonnaies majeures sur Base
+const BASE_MAJOR_TOKENS = [
+  {
+    id: "base",
+    name: "Base",
+    symbol: "base",
+    contract_address: "0x4200000000000000000000000000000000000006",
+    blockchain: "base",
+    is_memecoin: false,
+    market_cap: 5000000000,
+    current_price: 0.5,
+    platform: "Standard",
+  },
+  {
+    id: "friend-tech",
+    name: "Friend.tech",
+    symbol: "friend",
+    contract_address: "0xcf205808ed36593aa40a44f10c7f7a2e0216041e",
+    blockchain: "base",
+    is_memecoin: false,
+    market_cap: 2500000000,
+    current_price: 2.5,
+    platform: "Standard",
+  },
+  {
+    id: "meme",
+    name: "Meme",
+    symbol: "meme",
+    contract_address: "0xb131f4a55907b10d1f0a50d8ab8f09d342a94685",
+    blockchain: "base",
+    is_memecoin: true,
+    market_cap: 1800000000,
+    current_price: 0.000018,
+    platform: "Standard",
+  },
+  // ... autres tokens majeurs ...
+]
+
 // Liste des memecoins lowcap sur Base (liste initiale)
 const BASE_LOWCAPS_INITIAL: Crypto[] = [
   {
@@ -167,9 +205,9 @@ const BASE_LOWCAPS_INITIAL: Crypto[] = [
   },
 ]
 
-// Générer une liste plus complète de lowcaps Base (simulation)
-const generateBaseLowcaps = (count: number) => {
-  const lowcaps = [...BASE_LOWCAPS_INITIAL]
+// Générer une liste plus complète de cryptomonnaies Base (simulation)
+const generateBaseTokens = (count: number) => {
+  const tokens = [...BASE_MAJOR_TOKENS, ...BASE_LOWCAPS_INITIAL]
 
   // Noms aléatoires pour les tokens Base
   const prefixes = ["Base", "B", "Eth", "Optimism", "Layer", "Coin", "Degen", "Ape", "Frog", "Meme"]
@@ -185,13 +223,13 @@ const generateBaseLowcaps = (count: number) => {
     const contractAddress =
       "0x" + Array.from({ length: 40 }, () => "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("")
 
-    // Générer un prix aléatoire (très bas pour les lowcaps)
-    const price = Math.random() * 0.001
+    // Générer un prix aléatoire
+    const price = Math.random() * 100
 
-    // Générer une capitalisation aléatoire (entre 100K et 10M pour les lowcaps)
-    const marketCap = price * (Math.random() * 9900000 + 100000)
+    // Générer une capitalisation aléatoire (entre 100K et 1B)
+    const marketCap = price * (Math.random() * 990000000 + 100000)
 
-    lowcaps.push({
+    tokens.push({
       id: `${symbol}-${i}`,
       name,
       symbol,
@@ -201,76 +239,102 @@ const generateBaseLowcaps = (count: number) => {
       market_cap: marketCap,
       current_price: price,
       platform: "Standard",
-      image: `/placeholder.svg?height=50&width=50&text=${symbol.toUpperCase()}`,
-      market_cap_rank: Math.floor(Math.random() * 2000) + 1000,
-      fully_diluted_valuation: marketCap * 2,
-      total_volume: marketCap * 0.2,
-      high_24h: price * 1.2,
-      low_24h: price * 0.8,
-      price_change_24h: (Math.random() - 0.5) * price * 0.1,
-      price_change_percentage_24h: (Math.random() - 0.5) * 15,
-      market_cap_change_24h: (Math.random() - 0.5) * marketCap * 0.05,
-      market_cap_change_percentage_24h: (Math.random() - 0.5) * 5,
-      circulating_supply: marketCap / price,
-      total_supply: (marketCap / price) * 1.5,
-      max_supply: (marketCap / price) * 2,
-      ath: price * 2,
-      ath_change_percentage: -30,
-      ath_date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      atl: price * 0.5,
-      atl_change_percentage: 100,
-      atl_date: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-      last_updated: new Date().toISOString(),
     })
   }
 
-  return lowcaps
+  return tokens
 }
 
-// Générer une liste complète de lowcaps Base
-const BASE_LOWCAPS = generateBaseLowcaps(95) // 100 tokens au total
+// Générer une liste complète de tokens Base
+const BASE_TOKENS = generateBaseTokens(95) // 100 tokens au total
 
 export function BaseLowcap() {
   const [searchTerm, setSearchTerm] = useState("")
   const [nameSearchTerm, setNameSearchTerm] = useState("")
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<Crypto[]>([])
-  const [allLowcaps, setAllLowcaps] = useState<Crypto[]>([])
-  const [filteredLowcaps, setFilteredLowcaps] = useState<Crypto[]>([])
+  const [allTokens, setAllTokens] = useState<Crypto[]>([])
+  const [filteredTokens, setFilteredTokens] = useState<Crypto[]>([])
   const [selectedCrypto, setSelectedCrypto] = useState<Crypto | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [sortBy, setSortBy] = useState<"market_cap" | "price" | "name">("market_cap")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
-  const [marketCapFilter, setMarketCapFilter] = useState<"all" | "micro" | "nano" | "pico">("all")
+  const [marketCapFilter, setMarketCapFilter] = useState<"all" | "large" | "medium" | "small" | "micro" | "nano" | "pico">("all")
+  const [platformFilter, setPlatformFilter] = useState<"all" | "Standard">("all")
   const [activeTab, setActiveTab] = useState<"browse" | "search">("browse")
   const { toast } = useToast()
 
   const itemsPerPage = 12
 
+  const ONE_BILLION = 1000000000
+  const ONE_HUNDRED_MILLION = 100000000
   const TEN_MILLION = 10000000
   const ONE_MILLION = 1000000
   const ONE_HUNDRED_THOUSAND = 100000
 
-  // Convertir les lowcaps en objets Crypto complets
+  // Convertir les tokens en objets Crypto complets
   useEffect(() => {
-    // Pas besoin de conversion car tous les champs sont déjà ajoutés lors de la génération
-    setAllLowcaps(BASE_LOWCAPS)
-    applyFilters(BASE_LOWCAPS)
+    const convertedTokens = BASE_TOKENS.map((crypto) => {
+      return {
+        ...crypto,
+        id: crypto.id,
+        image: `/placeholder.svg?height=50&width=50&text=${crypto.symbol.toUpperCase()}`,
+        market_cap_rank: Math.floor(Math.random() * 2000) + 1,
+        fully_diluted_valuation: crypto.market_cap * 2,
+        total_volume: crypto.market_cap * 0.2,
+        high_24h: crypto.current_price * 1.2,
+        low_24h: crypto.current_price * 0.8,
+        price_change_24h: (Math.random() - 0.5) * crypto.current_price * 0.1,
+        price_change_percentage_24h: (Math.random() - 0.5) * 15,
+        market_cap_change_24h: (Math.random() - 0.5) * crypto.market_cap * 0.05,
+        market_cap_change_percentage_24h: (Math.random() - 0.5) * 5,
+        circulating_supply: crypto.market_cap / crypto.current_price,
+        total_supply: (crypto.market_cap / crypto.current_price) * 1.5,
+        max_supply: (crypto.market_cap / crypto.current_price) * 2,
+        ath: crypto.current_price * 2,
+        ath_change_percentage: -30,
+        ath_date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+        atl: crypto.current_price * 0.5,
+        atl_change_percentage: 100,
+        atl_date: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
+        last_updated: new Date().toISOString(),
+        platform: crypto.platform,
+      } as Crypto
+    })
+
+    setAllTokens(convertedTokens)
+    applyFilters(convertedTokens)
   }, [])
 
   // Appliquer les filtres et le tri
-  const applyFilters = (cryptos = allLowcaps) => {
+  const applyFilters = (cryptos = allTokens) => {
     let filtered = [...cryptos]
 
     // Filtre par capitalisation
     if (marketCapFilter !== "all") {
       filtered = filtered.filter((crypto) => {
-        if (marketCapFilter === "micro") return crypto.market_cap < TEN_MILLION && crypto.market_cap >= ONE_MILLION
-        if (marketCapFilter === "nano")
-          return crypto.market_cap < ONE_MILLION && crypto.market_cap >= ONE_HUNDRED_THOUSAND
-        if (marketCapFilter === "pico") return crypto.market_cap < ONE_HUNDRED_THOUSAND
-        return true
+        switch (marketCapFilter) {
+          case "large":
+            return crypto.market_cap >= ONE_BILLION
+          case "medium":
+            return crypto.market_cap >= ONE_HUNDRED_MILLION && crypto.market_cap < ONE_BILLION
+          case "small":
+            return crypto.market_cap >= TEN_MILLION && crypto.market_cap < ONE_HUNDRED_MILLION
+          case "micro":
+            return crypto.market_cap >= ONE_MILLION && crypto.market_cap < TEN_MILLION
+          case "nano":
+            return crypto.market_cap >= ONE_HUNDRED_THOUSAND && crypto.market_cap < ONE_MILLION
+          case "pico":
+            return crypto.market_cap < ONE_HUNDRED_THOUSAND
+          default:
+            return true
+        }
       })
+    }
+
+    // Filtre par plateforme
+    if (platformFilter !== "all") {
+      filtered = filtered.filter((crypto) => crypto.platform === platformFilter)
     }
 
     // Filtre par nom/symbole
@@ -295,14 +359,9 @@ export function BaseLowcap() {
       return sortDirection === "desc" ? nameB.localeCompare(nameA) : nameA.localeCompare(nameB)
     })
 
-    setFilteredLowcaps(filtered)
+    setFilteredTokens(filtered)
     setCurrentPage(1) // Réinitialiser à la première page après filtrage
   }
-
-  // Effet pour appliquer les filtres lorsque les critères changent
-  useEffect(() => {
-    applyFilters()
-  }, [sortBy, sortDirection, marketCapFilter, nameSearchTerm])
 
   // Recherche par adresse de contrat
   const searchByContract = async () => {
@@ -318,9 +377,9 @@ export function BaseLowcap() {
     setLoading(true)
 
     try {
-      // Recherche dans notre liste de lowcaps Base
+      // Recherche dans notre liste de tokens Base
       const searchTermLower = searchTerm.toLowerCase()
-      const foundInList = allLowcaps.find((crypto) => crypto.contract_address?.toLowerCase() === searchTermLower)
+      const foundInList = allTokens.find((crypto) => crypto.contract_address?.toLowerCase() === searchTermLower)
 
       if (foundInList) {
         setResults([foundInList])
@@ -402,8 +461,8 @@ export function BaseLowcap() {
   }
 
   // Pagination
-  const totalPages = Math.ceil(filteredLowcaps.length / itemsPerPage)
-  const currentItems = filteredLowcaps.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  const totalPages = Math.ceil(filteredTokens.length / itemsPerPage)
+  const currentItems = filteredTokens.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   const goToPage = (page: number) => {
     if (page < 1) page = 1
@@ -412,107 +471,69 @@ export function BaseLowcap() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1">
+          <Input
+            placeholder="Search by name or symbol..."
+            value={nameSearchTerm}
+            onChange={(e) => setNameSearchTerm(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Select value={marketCapFilter} onValueChange={setMarketCapFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Market Cap" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Market Caps</SelectItem>
+              <SelectItem value="large">Large Cap (>$1B)</SelectItem>
+              <SelectItem value="medium">Medium Cap ($100M-$1B)</SelectItem>
+              <SelectItem value="small">Small Cap ($10M-$100M)</SelectItem>
+              <SelectItem value="micro">Micro Cap ($1M-$10M)</SelectItem>
+              <SelectItem value="nano">Nano Cap ($100K-$1M)</SelectItem>
+              <SelectItem value="pico">Pico Cap (<$100K)</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={platformFilter} onValueChange={setPlatformFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Platform" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Platforms</SelectItem>
+              <SelectItem value="Standard">Standard</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}>
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                Sort by: {sortBy === "market_cap" ? "Market Cap" : sortBy === "price" ? "Price" : "Name"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setSortBy("market_cap")}>Market Cap</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("price")}>Price</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("name")}>Name</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
       <Tabs
         defaultValue="browse"
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as "browse" | "search")}
       >
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="browse">Browse All Lowcaps</TabsTrigger>
+          <TabsTrigger value="browse">Browse All Tokens</TabsTrigger>
           <TabsTrigger value="search">Search by Contract</TabsTrigger>
         </TabsList>
 
         <TabsContent value="browse" className="space-y-4 mt-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search by name or symbol..."
-                className="pl-8 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
-                value={nameSearchTerm}
-                onChange={(e) => setNameSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Select value={marketCapFilter} onValueChange={(value) => setMarketCapFilter(value as any)}>
-                <SelectTrigger className="w-[180px] bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-                  <SelectValue placeholder="Market Cap" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Market Caps</SelectItem>
-                  <SelectItem value="micro">Micro Cap ({"<$10M"})</SelectItem>
-                  <SelectItem value="nano">Nano Cap ({"<$1M"})</SelectItem>
-                  <SelectItem value="pico">Pico Cap ({"<$100K"})</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="gap-1 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
-                  >
-                    <ArrowUpDown className="h-4 w-4" />
-                    Sort
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy("market_cap")
-                      setSortDirection("desc")
-                    }}
-                  >
-                    Market Cap (High to Low)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy("market_cap")
-                      setSortDirection("asc")
-                    }}
-                  >
-                    Market Cap (Low to High)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy("price")
-                      setSortDirection("desc")
-                    }}
-                  >
-                    Price (High to Low)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy("price")
-                      setSortDirection("asc")
-                    }}
-                  >
-                    Price (Low to High)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy("name")
-                      setSortDirection("asc")
-                    }}
-                  >
-                    Name (A-Z)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSortBy("name")
-                      setSortDirection("desc")
-                    }}
-                  >
-                    Name (Z-A)
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {currentItems.map((crypto) => (
               <Card
@@ -619,7 +640,7 @@ export function BaseLowcap() {
             </div>
           )}
 
-          {filteredLowcaps.length === 0 && !loading && (
+          {filteredTokens.length === 0 && !loading && (
             <div className="text-center p-8 bg-blue-50 dark:bg-blue-950 rounded-lg">
               <p>No cryptocurrencies found matching your criteria.</p>
             </div>
