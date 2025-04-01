@@ -1,0 +1,27 @@
+{
+  "name": "SmilingApe Crypto Tracker",
+  "short_name": "SmilingApe",
+  "description": "Track and analyze cryptocurrency markets with real-time data and charts",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#4CAF50",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/smiling-ape-logo.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/smiling-ape-logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
+

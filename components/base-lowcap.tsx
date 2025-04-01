@@ -1,0 +1,662 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Search, ExternalLink, RefreshCw, ArrowUpDown, TrendingUp, TrendingDown } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/hooks/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import type { Crypto } from "@/components/crypto-tracker"
+
+// Liste des memecoins lowcap sur Base (liste initiale)
+const BASE_LOWCAPS_INITIAL = [
+  {
+    id: "based-doge",
+    name: "Based Doge",
+    symbol: "bdoge",
+    contract_address: "0x8226f8a374ea7d4b87d4c18ba9d191f2dc8caac8",
+    blockchain: "base",
+    is_memecoin: true,
+    market_cap: 3200000,
+    current_price: 0.000018,
+  },
+  {
+    id: "basenji",
+    name: "Basenji",
+    symbol: "basenji",
+    contract_address: "0x3170d9b9597d0aa9a5a5d0b7f5edc4b667f8a5d3",
+    blockchain: "base",
+    is_memecoin: true,
+    market_cap: 2100000,
+    current_price: 0.000009,
+  },
+  {
+    id: "based-pepe",
+    name: "Based Pepe",
+    symbol: "bpepe",
+    contract_address: "0x8c2a3a1f6b1c1e6817e0a1c5e8a8ec4b67f4e0b9",
+    blockchain: "base",
+    is_memecoin: true,
+    market_cap: 4500000,
+    current_price: 0.000025,
+  },
+  {
+    id: "base-dawgz",
+    name: "Base Dawgz",
+    symbol: "dawgz",
+    contract_address: "0x4a2b4f0e4b8c3e88d1d0a5eb0b1c3d4e5f6a7b8c",
+    blockchain: "base",
+    is_memecoin: true,
+    market_cap: 1800000,
+    current_price: 0.000007,
+  },
+  {
+    id: "base-chad",
+    name: "Base Chad",
+    symbol: "chad",
+    contract_address: "0x9d8e7a6c2e5f8b9c1d2e3f4a5b6c7d8e9f0a1b2c",
+    blockchain: "base",
+    is_memecoin: true,
+    market_cap: 3900000,
+    current_price: 0.000021,
+  },
+]
+
+// Générer une liste plus complète de lowcaps Base (simulation)
+const generateBaseLowcaps = (count: number) => {
+  const lowcaps = [...BASE_LOWCAPS_INITIAL]
+
+  // Noms aléatoires pour les tokens Base
+  const prefixes = ["Base", "B", "Eth", "Optimism", "Layer", "Coin", "Degen", "Ape", "Frog", "Meme"]
+  const suffixes = ["Doge", "Cat", "Pepe", "Shib", "Floki", "Elon", "Moon", "Rocket", "Lambo", "Inu", "Coin", "Token"]
+
+  for (let i = 0; i < count; i++) {
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)]
+    const suffix = suffixes[Math.floor(Math.random() * suffixes.length)]
+    const name = `${prefix}${suffix}`
+    const symbol = name.substring(0, 4).toLowerCase()
+
+    // Générer une adresse de contrat Base aléatoire (format Ethereum)
+    const contractAddress =
+      "0x" + Array.from({ length: 40 }, () => "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("")
+
+    // Générer un prix aléatoire (très bas pour les lowcaps)
+    const price = Math.random() * 0.001
+
+    // Générer une capitalisation aléatoire (entre 100K et 10M pour les lowcaps)
+    const marketCap = price * (Math.random() * 9900000 + 100000)
+
+    lowcaps.push({
+      id: `${symbol}-${i}`,
+      name,
+      symbol,
+      contract_address: contractAddress,
+      blockchain: "base",
+      is_memecoin: Math.random() > 0.3, // 70% de chance d'être un memecoin
+      market_cap: marketCap,
+      current_price: price,
+      platform: "Standard",
+    })
+  }
+
+  return lowcaps
+}
+
+// Générer une liste complète de lowcaps Base
+const BASE_LOWCAPS = generateBaseLowcaps(95) // 100 tokens au total
+
+export function BaseLowcap() {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [nameSearchTerm, setNameSearchTerm] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [results, setResults] = useState<Crypto[]>([])
+  const [allLowcaps, setAllLowcaps] = useState<Crypto[]>([])
+  const [filteredLowcaps, setFilteredLowcaps] = useState<Crypto[]>([])
+  const [selectedCrypto, setSelectedCrypto] = useState<Crypto | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [sortBy, setSortBy] = useState<"market_cap" | "price" | "name">("market_cap")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
+  const [marketCapFilter, setMarketCapFilter] = useState<"all" | "micro" | "nano" | "pico">("all")
+  const [activeTab, setActiveTab] = useState<"browse" | "search">("browse")
+  const { toast } = useToast()
+
+  const itemsPerPage = 12
+
+  const TEN_MILLION = 10000000
+  const ONE_MILLION = 1000000
+  const ONE_HUNDRED_THOUSAND = 100000
+
+  // Convertir les lowcaps en objets Crypto complets
+  useEffect(() => {
+    const convertedLowcaps = BASE_LOWCAPS.map((crypto) => {
+      return {
+        ...crypto,
+        id: crypto.id,
+        image: `/placeholder.svg?height=50&width=50&text=${crypto.symbol.toUpperCase()}`,
+        market_cap_rank: Math.floor(Math.random() * 2000) + 1000,
+        fully_diluted_valuation: crypto.market_cap * 2,
+        total_volume: crypto.market_cap * 0.2,
+        high_24h: crypto.current_price * 1.2,
+        low_24h: crypto.current_price * 0.8,
+        price_change_24h: (Math.random() - 0.5) * crypto.current_price * 0.1,
+        price_change_percentage_24h: (Math.random() - 0.5) * 15,
+        market_cap_change_24h: (Math.random() - 0.5) * crypto.market_cap * 0.05,
+        market_cap_change_percentage_24h: (Math.random() - 0.5) * 5,
+        circulating_supply: crypto.market_cap / crypto.current_price,
+        total_supply: (crypto.market_cap / crypto.current_price) * 1.5,
+        max_supply: (crypto.market_cap / crypto.current_price) * 2,
+        ath: crypto.current_price * 2,
+        ath_change_percentage: -30,
+        ath_date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+        atl: crypto.current_price * 0.5,
+        atl_change_percentage: 100,
+        atl_date: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
+        last_updated: new Date().toISOString(),
+      } as Crypto
+    })
+
+    setAllLowcaps(convertedLowcaps)
+    applyFilters(convertedLowcaps)
+  }, [])
+
+  // Appliquer les filtres et le tri
+  const applyFilters = (cryptos = allLowcaps) => {
+    let filtered = [...cryptos]
+
+    // Filtre par capitalisation
+    if (marketCapFilter !== "all") {
+      filtered = filtered.filter((crypto) => {
+        if (marketCapFilter === "micro") return crypto.market_cap < TEN_MILLION && crypto.market_cap >= ONE_MILLION
+        if (marketCapFilter === "nano")
+          return crypto.market_cap < ONE_MILLION && crypto.market_cap >= ONE_HUNDRED_THOUSAND
+        if (marketCapFilter === "pico") return crypto.market_cap < ONE_HUNDRED_THOUSAND
+        return true
+      })
+    }
+
+    // Filtre par nom/symbole
+    if (nameSearchTerm) {
+      const term = nameSearchTerm.toLowerCase()
+      filtered = filtered.filter(
+        (crypto) => crypto.name.toLowerCase().includes(term) || crypto.symbol.toLowerCase().includes(term),
+      )
+    }
+
+    // Tri
+    filtered.sort((a, b) => {
+      if (sortBy === "market_cap") {
+        return sortDirection === "desc" ? b.market_cap - a.market_cap : a.market_cap - b.market_cap
+      }
+      if (sortBy === "price") {
+        return sortDirection === "desc" ? b.current_price - a.current_price : a.current_price - b.current_price
+      }
+      // Tri par nom
+      const nameA = a.name.toLowerCase()
+      const nameB = b.name.toLowerCase()
+      return sortDirection === "desc" ? nameB.localeCompare(nameA) : nameA.localeCompare(nameB)
+    })
+
+    setFilteredLowcaps(filtered)
+    setCurrentPage(1) // Réinitialiser à la première page après filtrage
+  }
+
+  // Effet pour appliquer les filtres lorsque les critères changent
+  useEffect(() => {
+    applyFilters()
+  }, [sortBy, sortDirection, marketCapFilter, nameSearchTerm])
+
+  // Recherche par adresse de contrat
+  const searchByContract = async () => {
+    if (!searchTerm.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a contract address",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      // Recherche dans notre liste de lowcaps Base
+      const searchTermLower = searchTerm.toLowerCase()
+      const foundInList = allLowcaps.find((crypto) => crypto.contract_address?.toLowerCase() === searchTermLower)
+
+      if (foundInList) {
+        setResults([foundInList])
+        setSelectedCrypto(foundInList)
+      } else {
+        // Simuler une recherche sur l'API Base (dans un cas réel, on utiliserait une API)
+        // Attendre un peu pour simuler une requête réseau
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+
+        // 30% de chance de trouver un résultat aléatoire
+        if (Math.random() > 0.7) {
+          const randomName = `BASE${Math.random().toString(36).substring(2, 7).toUpperCase()}`
+          const randomPrice = Math.random() * 0.0001
+
+          const randomCrypto: Crypto = {
+            id: randomName.toLowerCase(),
+            name: randomName,
+            symbol: randomName.toLowerCase(),
+            image: `/placeholder.svg?height=50&width=50&text=${randomName}`,
+            current_price: randomPrice,
+            market_cap: randomPrice * Math.random() * 10000000,
+            market_cap_rank: Math.floor(Math.random() * 2000) + 1000,
+            fully_diluted_valuation: randomPrice * Math.random() * 20000000,
+            total_volume: randomPrice * Math.random() * 2000000,
+            high_24h: randomPrice * 1.2,
+            low_24h: randomPrice * 0.8,
+            price_change_24h: (Math.random() - 0.5) * randomPrice * 0.1,
+            price_change_percentage_24h: (Math.random() - 0.5) * 15,
+            market_cap_change_24h: (Math.random() - 0.5) * 100000,
+            market_cap_change_percentage_24h: (Math.random() - 0.5) * 5,
+            circulating_supply: Math.random() * 1000000000,
+            total_supply: Math.random() * 1500000000,
+            max_supply: Math.random() * 2000000000,
+            ath: randomPrice * 2,
+            ath_change_percentage: -30,
+            ath_date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+            atl: randomPrice * 0.5,
+            atl_change_percentage: 100,
+            atl_date: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
+            last_updated: new Date().toISOString(),
+            contract_address: searchTerm,
+            blockchain: "base",
+            is_memecoin: Math.random() > 0.5,
+          }
+
+          setResults([randomCrypto])
+          setSelectedCrypto(randomCrypto)
+        } else {
+          setResults([])
+          setSelectedCrypto(null)
+          toast({
+            title: "No results found",
+            description: "No cryptocurrency found with this contract address on Base",
+            variant: "destructive",
+          })
+        }
+      }
+    } catch (error) {
+      console.error("Error searching Base contract:", error)
+      toast({
+        title: "Error",
+        description: "Failed to search for the contract. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatPrice = (price: number) => {
+    if (price < 0.00001) return price.toExponential(4)
+    return price.toLocaleString(undefined, { maximumFractionDigits: 8 })
+  }
+
+  const formatMarketCap = (marketCap: number) => {
+    if (marketCap >= 1000000) return `$${(marketCap / 1000000).toFixed(2)}M`
+    if (marketCap >= 1000) return `$${(marketCap / 1000).toFixed(2)}K`
+    return `$${marketCap.toFixed(2)}`
+  }
+
+  // Pagination
+  const totalPages = Math.ceil(filteredLowcaps.length / itemsPerPage)
+  const currentItems = filteredLowcaps.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+  const goToPage = (page: number) => {
+    if (page < 1) page = 1
+    if (page > totalPages) page = totalPages
+    setCurrentPage(page)
+  }
+
+  return (
+    <div className="space-y-4">
+      <Tabs
+        defaultValue="browse"
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as "browse" | "search")}
+      >
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="browse">Browse All Lowcaps</TabsTrigger>
+          <TabsTrigger value="search">Search by Contract</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="browse" className="space-y-4 mt-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by name or symbol..."
+                className="pl-8 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
+                value={nameSearchTerm}
+                onChange={(e) => setNameSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Select value={marketCapFilter} onValueChange={(value) => setMarketCapFilter(value as any)}>
+                <SelectTrigger className="w-[180px] bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                  <SelectValue placeholder="Market Cap" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Market Caps</SelectItem>
+                  <SelectItem value="micro">Micro Cap ({"<$10M"})</SelectItem>
+                  <SelectItem value="nano">Nano Cap ({"<$1M"})</SelectItem>
+                  <SelectItem value="pico">Pico Cap ({"<$100K"})</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="gap-1 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
+                  >
+                    <ArrowUpDown className="h-4 w-4" />
+                    Sort
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSortBy("market_cap")
+                      setSortDirection("desc")
+                    }}
+                  >
+                    Market Cap (High to Low)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSortBy("market_cap")
+                      setSortDirection("asc")
+                    }}
+                  >
+                    Market Cap (Low to High)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSortBy("price")
+                      setSortDirection("desc")
+                    }}
+                  >
+                    Price (High to Low)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSortBy("price")
+                      setSortDirection("asc")
+                    }}
+                  >
+                    Price (Low to High)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSortBy("name")
+                      setSortDirection("asc")
+                    }}
+                  >
+                    Name (A-Z)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSortBy("name")
+                      setSortDirection("desc")
+                    }}
+                  >
+                    Name (Z-A)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {currentItems.map((crypto) => (
+              <Card
+                key={crypto.id}
+                className="overflow-hidden border-blue-200 dark:border-blue-800 hover:shadow-md transition-shadow"
+              >
+                <CardHeader className="p-4 pb-2 bg-blue-100/50 dark:bg-blue-900/20">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-200 dark:bg-blue-800 rounded-full flex items-center justify-center text-xs font-bold">
+                        {crypto.symbol.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">{crypto.name}</CardTitle>
+                        <CardDescription className="text-xs uppercase">{crypto.symbol}</CardDescription>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+                      Base
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-2">
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="text-sm">
+                      <div className="text-muted-foreground text-xs">Price</div>
+                      <div className="font-medium">${formatPrice(crypto.current_price)}</div>
+                    </div>
+                    <div className="text-sm text-right">
+                      <div className="text-muted-foreground text-xs">Market Cap</div>
+                      <div className="font-medium">{formatMarketCap(crypto.market_cap)}</div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="text-sm">
+                      <div className="text-muted-foreground text-xs">24h</div>
+                      <div
+                        className={`font-medium flex items-center ${crypto.price_change_percentage_24h >= 0 ? "text-green-600" : "text-red-600"}`}
+                      >
+                        {crypto.price_change_percentage_24h >= 0 ? (
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3 mr-1" />
+                        )}
+                        {crypto.price_change_percentage_24h >= 0 ? "+" : ""}
+                        {crypto.price_change_percentage_24h.toFixed(2)}%
+                      </div>
+                    </div>
+                    {crypto.is_memecoin && (
+                      <Badge
+                        variant="outline"
+                        className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
+                      >
+                        Meme
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-blue-100 dark:border-blue-900">
+                    <div className="text-xs text-muted-foreground flex items-center justify-between">
+                      <span className="truncate max-w-[180px]">{crypto.contract_address}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-blue-600 hover:text-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900"
+                        onClick={() => {
+                          setSearchTerm(crypto.contract_address || "")
+                          setSelectedCrypto(crypto)
+                          setActiveTab("search")
+                        }}
+                      >
+                        <Search className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-6">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <div className="text-sm">
+                  Page {currentPage} of {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {filteredLowcaps.length === 0 && !loading && (
+            <div className="text-center p-8 bg-blue-50 dark:bg-blue-950 rounded-lg">
+              <p>No cryptocurrencies found matching your criteria.</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="search" className="space-y-4 mt-4">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Enter Base contract address..."
+                className="pl-8 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && searchByContract()}
+              />
+            </div>
+            <Button onClick={searchByContract} className="bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
+              {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Search"}
+            </Button>
+          </div>
+
+          {loading && (
+            <div className="space-y-4 mt-6">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Skeleton className="h-40 w-full" />
+                <Skeleton className="h-40 w-full" />
+              </div>
+            </div>
+          )}
+
+          {selectedCrypto && !loading && (
+            <Card className="mt-6 border-blue-200 dark:border-blue-800">
+              <CardHeader className="bg-blue-100/50 dark:bg-blue-900/20">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-200 dark:bg-blue-800 rounded-full flex items-center justify-center text-sm font-bold">
+                      {selectedCrypto.symbol.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <CardTitle>{selectedCrypto.name}</CardTitle>
+                      <CardDescription className="flex items-center gap-2">
+                        <span className="uppercase">{selectedCrypto.symbol}</span>
+                        <Badge
+                          variant="outline"
+                          className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
+                        >
+                          Base
+                        </Badge>
+                        {selectedCrypto.is_memecoin && (
+                          <Badge
+                            variant="outline"
+                            className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
+                          >
+                            Memecoin
+                          </Badge>
+                        )}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" asChild>
+                    <a
+                      href={`https://basescan.org/token/${selectedCrypto.contract_address}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      <span>Basescan</span>
+                    </a>
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Token Information</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Price</span>
+                        <span className="font-medium">${formatPrice(selectedCrypto.current_price)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Market Cap</span>
+                        <span className="font-medium">${selectedCrypto.market_cap.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">24h Change</span>
+                        <span
+                          className={`font-medium ${selectedCrypto.price_change_percentage_24h >= 0 ? "text-green-600" : "text-red-600"}`}
+                        >
+                          {selectedCrypto.price_change_percentage_24h >= 0 ? "+" : ""}
+                          {selectedCrypto.price_change_percentage_24h.toFixed(2)}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">24h Volume</span>
+                        <span className="font-medium">${selectedCrypto.total_volume.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Contract Information</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Blockchain</span>
+                        <span className="font-medium">Base</span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-muted-foreground">Contract Address</span>
+                        <code className="text-xs bg-blue-50 dark:bg-blue-950 p-2 rounded break-all">
+                          {selectedCrypto.contract_address}
+                        </code>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Last Updated</span>
+                        <span className="font-medium">{new Date(selectedCrypto.last_updated).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
