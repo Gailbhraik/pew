@@ -5,6 +5,7 @@ import { AuthProvider } from "@/hooks/use-auth"
 import { Toaster } from "@/components/ui/toaster"
 import { Analytics } from "@vercel/analytics/react"
 import type { Metadata } from "next"
+import { GlobalChat } from "@/components/global-chat"
 
 export const metadata: Metadata = {
   title: "Saperlipocrypto | Track Cryptocurrencies",
@@ -47,6 +48,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             {children}
+            <GlobalChat />
             <Toaster />
             <Analytics />
           </AuthProvider>
@@ -55,7 +57,3 @@ export default function RootLayout({
     </html>
   )
 }
-
-
-
-import './globals.css'
