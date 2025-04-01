@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -41,27 +41,33 @@ export function BlockchainScanner() {
   const [error, setError] = useState<string | null>(null)
 
   // Charger les recherches récentes depuis le localStorage au chargement du composant
-  useState(() => {
-    const savedSearches = localStorage.getItem("blockchain-scanner-searches")
-    if (savedSearches) {
-      try {
-        const parsedSearches = JSON.parse(savedSearches)
-        // Convertir les timestamps en objets Date
-        const processedSearches = parsedSearches.map((search: any) => ({
-          ...search,
-          timestamp: new Date(search.timestamp)
-        }))
-        setRecentSearches(processedSearches)
-      } catch (error) {
-        console.error("Error parsing saved searches:", error)
+  useEffect(() => {
+    // Vérifier que le code s'exécute côté client
+    if (typeof window !== 'undefined') {
+      const savedSearches = localStorage.getItem("blockchain-scanner-searches")
+      if (savedSearches) {
+        try {
+          const parsedSearches = JSON.parse(savedSearches)
+          // Convertir les timestamps en objets Date
+          const processedSearches = parsedSearches.map((search: any) => ({
+            ...search,
+            timestamp: new Date(search.timestamp)
+          }))
+          setRecentSearches(processedSearches)
+        } catch (error) {
+          console.error("Error parsing saved searches:", error)
+        }
       }
     }
-  })
+  }, [])
 
   const saveSearch = (search: ScanResult) => {
-    const updatedSearches = [search, ...recentSearches.slice(0, 9)]
-    setRecentSearches(updatedSearches)
-    localStorage.setItem("blockchain-scanner-searches", JSON.stringify(updatedSearches))
+    // Vérifier que le code s'exécute côté client
+    if (typeof window !== 'undefined') {
+      const updatedSearches = [search, ...recentSearches.slice(0, 9)]
+      setRecentSearches(updatedSearches)
+      localStorage.setItem("blockchain-scanner-searches", JSON.stringify(updatedSearches))
+    }
   }
 
   const handleSearch = async () => {
