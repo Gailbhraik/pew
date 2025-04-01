@@ -24,37 +24,62 @@ export function GlobalChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { user } = useAuth()
 
-  // Simuler des messages existants
+  // Charger les messages depuis le localStorage au démarrage
   useEffect(() => {
-    const demoMessages: Message[] = [
-      {
-        id: "1",
-        content: "Bienvenue dans le chat de Saperlipocrypto!",
-        sender: "System",
-        timestamp: new Date(Date.now() - 3600000),
-        avatar: "/smiling-ape-logo.png"
-      },
-      {
-        id: "2",
-        content: "Comment puis-je acheter du Bitcoin?",
-        sender: "User123",
-        timestamp: new Date(Date.now() - 1800000)
-      },
-      {
-        id: "3",
-        content: "Tu peux utiliser des plateformes comme Binance ou Coinbase pour acheter du BTC",
-        sender: "CryptoExpert",
-        timestamp: new Date(Date.now() - 1700000)
-      },
-      {
-        id: "4",
-        content: "Qu'est-ce que vous pensez de Solana en ce moment?",
-        sender: "SolFan",
-        timestamp: new Date(Date.now() - 900000)
+    const storedMessages = localStorage.getItem("saperlipocrypto-chat-messages")
+    if (storedMessages) {
+      try {
+        const parsedMessages = JSON.parse(storedMessages)
+        // Convertir les timestamps en objets Date
+        const processedMessages = parsedMessages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }))
+        setMessages(processedMessages)
+      } catch (error) {
+        console.error("Error parsing stored messages:", error)
       }
-    ]
-    setMessages(demoMessages)
+    } else {
+      // Simuler des messages existants seulement si aucun message n'est stocké
+      const demoMessages: Message[] = [
+        {
+          id: "1",
+          content: "Bienvenue dans le chat de Saperlipocrypto!",
+          sender: "System",
+          timestamp: new Date(Date.now() - 3600000),
+          avatar: "/smiling-ape-logo.png"
+        },
+        {
+          id: "2",
+          content: "Comment puis-je acheter du Bitcoin?",
+          sender: "User123",
+          timestamp: new Date(Date.now() - 1800000)
+        },
+        {
+          id: "3",
+          content: "Tu peux utiliser des plateformes comme Binance ou Coinbase pour acheter du BTC",
+          sender: "CryptoExpert",
+          timestamp: new Date(Date.now() - 1700000)
+        },
+        {
+          id: "4",
+          content: "Qu'est-ce que vous pensez de Solana en ce moment?",
+          sender: "SolFan",
+          timestamp: new Date(Date.now() - 900000)
+        }
+      ]
+      setMessages(demoMessages)
+      // Sauvegarder les messages de démo dans le localStorage
+      localStorage.setItem("saperlipocrypto-chat-messages", JSON.stringify(demoMessages))
+    }
   }, [])
+
+  // Sauvegarder les messages dans le localStorage à chaque mise à jour
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem("saperlipocrypto-chat-messages", JSON.stringify(messages))
+    }
+  }, [messages])
 
   // Faire défiler automatiquement vers le bas lorsque de nouveaux messages arrivent
   useEffect(() => {
@@ -126,7 +151,7 @@ export function GlobalChat() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">{msg.sender}</span>
                       <span className="text-xs text-muted-foreground">
-                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                     <p className="text-sm">{msg.content}</p>
