@@ -48,6 +48,7 @@ export type Crypto = {
   contract_address?: string
   blockchain?: string
   is_memecoin?: boolean
+  platform?: string
 }
 
 // Liste des memecoins populaires sur Solana
