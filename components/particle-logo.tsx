@@ -30,58 +30,22 @@ export function ParticleLogo() {
         init={particlesInit}
         options={{
           fullScreen: { enable: false },
-          fpsLimit: 60,
-          interactivity: {
-            events: {
-              onClick: {
-                enable: true,
-                mode: "push",
-              },
-              onHover: {
-                enable: true,
-                mode: "repulse",
-              },
-              resize: {
-                enable: true,
-                delay: 0.5,
-              },
-            },
-            modes: {
-              push: {
-                quantity: 4,
-              },
-              repulse: {
-                distance: 100,
-                duration: 0.4,
-              },
-            },
-          },
           particles: {
             color: {
               value: ["#FFD700", "#32CD32", "#4169E1"],
             },
             links: {
-              color: "#ffffff",
-              distance: 150,
               enable: true,
+              distance: 150,
+              color: "#ffffff",
               opacity: 0.5,
               width: 1,
             },
             move: {
-              direction: "none",
               enable: true,
-              outModes: {
-                default: "bounce",
-              },
-              random: false,
               speed: 2,
-              straight: false,
             },
             number: {
-              density: {
-                enable: true,
-                factor: 800,
-              },
               value: 40,
             },
             opacity: {
@@ -94,7 +58,6 @@ export function ParticleLogo() {
               value: { min: 1, max: 5 },
             },
           },
-          detectRetina: true,
         }}
         className="h-full w-full"
       />
