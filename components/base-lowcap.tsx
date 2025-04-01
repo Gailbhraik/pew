@@ -48,7 +48,6 @@ const BASE_MAJOR_TOKENS = [
     current_price: 0.000018,
     platform: "Standard",
   },
-  // ... autres tokens majeurs ...
 ]
 
 // Liste des memecoins lowcap sur Base (liste initiale)
@@ -699,7 +698,7 @@ export function BaseLowcap() {
                             variant="outline"
                             className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
                           >
-                            Memecoin
+                            Meme
                           </Badge>
                         )}
                       </CardDescription>
