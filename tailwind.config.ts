@@ -84,17 +84,25 @@ const config: Config = {
   					height: '0'
   				}
   			},
-            'colorShift': {
-                '0%': { filter: 'hue-rotate(0deg)' },
-                '100%': { filter: 'hue-rotate(360deg)' }
+            'flicker': {
+                '0%, 100%': { opacity: '1' },
+                '25%': { opacity: '0.85' },
+                '50%': { opacity: '0.9' },
+                '75%': { opacity: '0.95' }
+            },
+            'fire': {
+                '0%, 100%': { transform: 'translateY(0) scale(1)' },
+                '50%': { transform: 'translateY(-20%) scale(1.1)' }
             }
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
-            'spin-slow': 'spin 8s linear infinite',
-            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'colorShift': 'colorShift 8s infinite alternate'
+            'flicker': 'flicker 3s infinite alternate',
+            'fire-slow': 'fire 4s ease-in-out infinite',
+            'fire-med': 'fire 3s ease-in-out infinite alternate',
+            'fire-fast': 'fire 2s ease-in-out infinite',
+            'pulse-fire': 'pulse 2s ease-in-out infinite'
   		}
   	}
   },
