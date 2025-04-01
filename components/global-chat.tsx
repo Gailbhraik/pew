@@ -67,9 +67,8 @@ export function GlobalChat() {
     const newMsg: Message = {
       id: Date.now().toString(),
       content: newMessage,
-      sender: user?.displayName || "Anonymous",
-      timestamp: new Date(),
-      avatar: user?.photoURL
+      sender: user?.name || "Anonymous",
+      timestamp: new Date()
     }
 
     setMessages([...messages, newMsg])
