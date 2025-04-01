@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Search, ExternalLink, RefreshCw, ArrowUpDown, TrendingUp, TrendingDown, Wallet, Plus, Trash2 } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Search, ExternalLink, RefreshCw, ArrowUpDown, TrendingUp, TrendingDown, Wallet, Plus, Trash2, MessageCircle, X, Send } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -258,6 +258,14 @@ const generateBaseTokens = (count: number) => {
 // Générer une liste complète de tokens Base
 const BASE_TOKENS = generateBaseTokens(95) // 100 tokens au total
 
+// Message type for chat
+type Message = {
+  id: string;
+  sender: string;
+  text: string;
+  timestamp: Date;
+}
+
 export function BaseLowcap() {
   const [searchTerm, setSearchTerm] = useState("")
   const [nameSearchTerm, setNameSearchTerm] = useState("")
@@ -280,6 +288,11 @@ export function BaseLowcap() {
   const [explorerResults, setExplorerResults] = useState<any>(null)
   const [explorerLoading, setExplorerLoading] = useState(false)
   const { toast } = useToast()
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatMessages, setChatMessages] = useState<Message[]>([])
+  const [messageText, setMessageText] = useState("")
+  const [userName, setUserName] = useState("")
+  const chatEndRef = useRef<HTMLDivElement>(null)
 
   const itemsPerPage = 12
 
@@ -722,8 +735,70 @@ export function BaseLowcap() {
     }
   }
 
+  // Load chat messages from local storage
+  useEffect(() => {
+    const savedMessages = localStorage.getItem("chat-messages")
+    if (savedMessages) {
+      try {
+        const parsedMessages = JSON.parse(savedMessages) as Message[]
+        // Convert string timestamps back to Date objects
+        const messagesWithDates = parsedMessages.map(msg => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }))
+        setChatMessages(messagesWithDates)
+      } catch (error) {
+        console.error("Failed to parse chat messages:", error)
+      }
+    }
+    
+    // Generate random username if not set
+    const savedUserName = localStorage.getItem("chat-username")
+    if (savedUserName) {
+      setUserName(savedUserName)
+    } else {
+      const randomName = `User${Math.floor(Math.random() * 10000)}`
+      setUserName(randomName)
+      localStorage.setItem("chat-username", randomName)
+    }
+  }, [])
+  
+  // Save chat messages to local storage
+  useEffect(() => {
+    if (chatMessages.length > 0) {
+      localStorage.setItem("chat-messages", JSON.stringify(chatMessages))
+    }
+  }, [chatMessages])
+  
+  // Scroll to bottom of chat when new messages are added
+  useEffect(() => {
+    if (chatEndRef.current && chatOpen) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [chatMessages, chatOpen])
+  
+  // Send a chat message
+  const sendMessage = () => {
+    if (!messageText.trim()) return
+    
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      sender: userName,
+      text: messageText.trim(),
+      timestamp: new Date()
+    }
+    
+    setChatMessages([...chatMessages, newMessage])
+    setMessageText("")
+  }
+  
+  // Format time for chat messages
+  const formatMessageTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1">
           <Input
@@ -1445,6 +1520,69 @@ export function BaseLowcap() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Chat toggle button */}
+      <Button
+        className="fixed right-4 bottom-4 rounded-full p-3 shadow-md bg-blue-600 hover:bg-blue-700 text-white"
+        onClick={() => setChatOpen(!chatOpen)}
+      >
+        {chatOpen ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
+      </Button>
+      
+      {/* Chat panel */}
+      <div 
+        className={`fixed right-4 bottom-16 w-80 bg-white dark:bg-gray-950 rounded-lg shadow-xl transition-transform duration-300 border border-blue-200 dark:border-blue-800 ${
+          chatOpen ? 'transform translate-y-0 opacity-100' : 'transform translate-y-8 opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="p-3 border-b border-blue-200 dark:border-blue-800 bg-blue-100/50 dark:bg-blue-900/20 rounded-t-lg flex justify-between items-center">
+          <h3 className="font-medium">Community Chat</h3>
+          <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+            {chatMessages.length} messages
+          </Badge>
+        </div>
+        <div className="p-3 max-h-80 overflow-y-auto flex flex-col space-y-3">
+          {chatMessages.length === 0 ? (
+            <div className="text-center text-muted-foreground text-sm py-8">
+              No messages yet. Be the first to chat!
+            </div>
+          ) : (
+            chatMessages.map((message) => (
+              <div 
+                key={message.id} 
+                className={`flex flex-col rounded-lg p-2 max-w-[90%] ${
+                  message.sender === userName 
+                    ? 'self-end bg-blue-100 dark:bg-blue-900/40' 
+                    : 'self-start bg-gray-100 dark:bg-gray-800/40'
+                }`}
+              >
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-medium">{message.sender}</span>
+                  <span className="text-xs text-muted-foreground">{formatMessageTime(message.timestamp)}</span>
+                </div>
+                <p className="text-sm">{message.text}</p>
+              </div>
+            ))
+          )}
+          <div ref={chatEndRef} />
+        </div>
+        <div className="p-3 border-t border-blue-200 dark:border-blue-800 flex gap-2">
+          <Input
+            placeholder="Type a message..."
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            className="text-sm"
+          />
+          <Button 
+            size="icon" 
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={sendMessage}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
