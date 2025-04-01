@@ -73,7 +73,7 @@ export function LowcapExplorer() {
             market_cap_change_percentage_24h: 1.7,
             circulating_supply: 120000000,
             total_supply: 120000000,
-            max_supply: null,
+            max_supply: 120000000,
             ath: 4800,
             ath_change_percentage: -35,
             ath_date: "2021-11-10T00:00:00.000Z",
