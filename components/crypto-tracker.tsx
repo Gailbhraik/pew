@@ -240,7 +240,7 @@ export default function CryptoTracker() {
       "cat",
     ]
     return memeKeywords.some(
-      (keyword) =>
+      (keyword: string) =>
         id.toLowerCase().includes(keyword) ||
         name.toLowerCase().includes(keyword) ||
         symbol.toLowerCase().includes(keyword),
