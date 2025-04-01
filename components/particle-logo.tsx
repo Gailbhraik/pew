@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Particles from "@tsparticles/react"
-import { loadFull } from "@tsparticles/slim"
+import { loadSlim } from "@tsparticles/slim"
 import type { Engine } from "@tsparticles/engine"
 
 export function ParticleLogo() {
@@ -13,7 +13,7 @@ export function ParticleLogo() {
   }, [])
 
   const particlesInit = useCallback(async (engine: Engine) => {
-    await loadFull(engine)
+    await loadSlim(engine)
   }, [])
 
   if (!mounted) return null
