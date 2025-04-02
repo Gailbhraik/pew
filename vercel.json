@@ -1,11 +1,10 @@
 {
   "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
   "routes": [
     { "handle": "filesystem" },
-    { "src": "/multi-charts", "dest": "/multi-charts" },
-    { "src": "/dofus-map", "dest": "/dofus-map" },
-    { "src": "/scanner", "dest": "/scanner" },
-    { "src": "/pokemon", "dest": "/pokemon" },
-    { "src": "/(.*)", "dest": "/" }
+    { "src": "/api/revalidate", "dest": "/api/revalidate" },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }

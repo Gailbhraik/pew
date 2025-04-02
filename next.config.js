@@ -40,6 +40,36 @@ const nextConfig = {
       },
     ]
   },
+  // Ajouter la configuration de rewrites pour les pages
+  async rewrites() {
+    return {
+      beforeFiles: [
+        // Ces rewrites sont appliqués avant de chercher les fichiers
+        {
+          source: '/multi-charts',
+          destination: '/app/multi-charts/page',
+        },
+        {
+          source: '/dofus-map',
+          destination: '/app/dofus-map/page',
+        },
+      ],
+      afterFiles: [
+        // Ces rewrites sont appliqués après avoir cherché les fichiers mais avant les routes dynamiques
+        {
+          source: '/:path*',
+          destination: '/:path*',
+        },
+      ],
+      fallback: [
+        // Ces rewrites sont appliqués si aucune des routes précédentes ne correspond
+        {
+          source: '/:path*',
+          destination: '/',
+        },
+      ],
+    }
+  },
 }
 
 module.exports = nextConfig
