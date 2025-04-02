@@ -19,7 +19,7 @@ import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { API_KEYS, API_ENDPOINTS, getHeaders, buildBaseScanUrl } from "@/lib/api-config"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { ExecutionContext } from '@cloudflare/workers-types'
+
 
 type ScanResult = {
   type: "wallet" | "token"
@@ -65,7 +65,7 @@ async function fetchSolanaWallet(address: string): Promise<ScanResult> {
     // Utiliser l'API SolScan pour obtenir les informations du compte
     const accountResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.ACCOUNT}/${address}`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, process.env)
     });
     
     if (!accountResponse.ok) {
@@ -77,7 +77,7 @@ async function fetchSolanaWallet(address: string): Promise<ScanResult> {
     // Récupérer les transactions récentes
     const txResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TRANSACTIONS}/${address}?limit=5`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, process.env)
     });
     
     let transactions: any[] = [];
@@ -138,7 +138,7 @@ async function fetchSolanaToken(address: string): Promise<ScanResult> {
     // Utiliser l'API SolScan pour obtenir les informations du token
     const tokenResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TOKEN}/${address}`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, process.env)
     });
     
     if (!tokenResponse.ok) {
@@ -150,7 +150,7 @@ async function fetchSolanaToken(address: string): Promise<ScanResult> {
     // Récupérer les transferts récents du token
     const transfersResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TOKEN}/${address}/transfers?limit=5`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, process.env)
     });
     
     let transfers: any[] = [];
@@ -162,7 +162,7 @@ async function fetchSolanaToken(address: string): Promise<ScanResult> {
     // Récupérer les métadonnées du token pour plus d'informations
     const metaResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TOKEN_META}/${address}`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, process.env)
     });
     
     let tokenMeta: any = {};
@@ -173,7 +173,7 @@ async function fetchSolanaToken(address: string): Promise<ScanResult> {
     // Récupérer le nombre de holders
     const holdersResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TOKEN_HOLDERS}/${address}?limit=1&offset=0`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, process.env)
     });
     
     let holdersData = { total: 0 };
@@ -542,7 +542,7 @@ async function checkWalletOwnsToken(walletAddress: string, tokenAddress: string,
       // Vérifier la possession du token sur Solana
       const tokenHoldingsResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}/account/tokens?account=${walletAddress}`, {
         method: 'GET',
-        headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
+        headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, process.env)
       });
       
       if (!tokenHoldingsResponse.ok) {
