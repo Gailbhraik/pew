@@ -9,12 +9,6 @@ import Link from "next/link"
 import { ArrowLeft, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Metadata } from "next"
-
-export const metadata: Metadata = {
-  title: "Multi Charts | Analyse Technique",
-  description: "Visualisez jusqu'à 4 graphiques TradingView simultanément pour une analyse technique complète",
-}
 
 export default function MultiChartsPage() {
   // État pour les graphiques
