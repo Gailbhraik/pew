@@ -126,7 +126,8 @@ async function fetchSolanaWallet(address: string): Promise<ScanResult> {
     };
   } catch (error) {
     console.error('Error fetching Solana wallet:', error);
-    throw error;
+    // Provide fallback data or handle the error appropriately
+    throw error; // Re-throw the error if you want to handle it elsewhere
   }
 }
 
@@ -1183,4 +1184,18 @@ export function BlockchainScanner() {
       </footer>
     </div>
   )
+}
+
+export async function fetch(request: Request, env: any, ctx: ExecutionContext) {
+  // Your existing code here
+  return new Response("Hello World");
+}
+
+addEventListener('fetch', (event) => {
+  event.respondWith(handleRequest(event.request));
+});
+
+async function handleRequest(request: Request) {
+  // Your existing code here
+  return new Response("Hello World");
 }
