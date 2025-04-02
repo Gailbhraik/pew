@@ -13,8 +13,8 @@ const nextConfig = {
       },
     ],
   },
-  // Ajouter trailingSlash pour éviter certains problèmes de routage
-  trailingSlash: true,
+  // Supprimer trailingSlash qui peut causer des problèmes avec certaines routes
+  // trailingSlash: true,
 }
 
-module.exports = nextConfig 
+module.exports = nextConfig
