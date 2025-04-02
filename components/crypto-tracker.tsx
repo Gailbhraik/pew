@@ -352,30 +352,20 @@ export default function CryptoTracker() {
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div className="flex items-center gap-4">
+      <header className="flex justify-between items-center mb-8">
+        <div className="flex items-center">
           <ParticleLogo />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Saperlipocrypto</h1>
-            <p className="text-muted-foreground mt-1">Track and analyze cryptocurrency markets</p>
-          </div>
+          <h1 className="text-2xl font-bold">Saperlipocrypto</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <LocalTime />
-          <ThemeToggle />
-          <UserAuth />
-          <Link
-            href="/explorer"
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
-          >
-            Blockchain Explorer
-          </Link>
-          <Link
-            href="/scanner"
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
-          >
-            Scanner
-          </Link>
+        <div className="flex items-center space-x-4">
+          <div className="flex space-x-2">
+            <Link href="/scanner" className="text-sm font-medium hover:underline">
+              Scanner
+            </Link>
+            <Link href="/pokemon" className="text-sm font-medium hover:underline">
+              Pokémon
+            </Link>
+          </div>
           <Button
             onClick={() => {
               fetchCryptos()
@@ -383,11 +373,14 @@ export default function CryptoTracker() {
             }}
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-1"
           >
-            <RefreshCw className="h-4 w-4" />
-            Refresh Data
+            <RefreshCw className="h-3 w-3" />
+            Refresh
           </Button>
+          <LocalTime />
+          <ThemeToggle />
+          <UserAuth />
         </div>
       </header>
 
