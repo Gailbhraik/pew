@@ -10,7 +10,7 @@ import { UserAuth } from "@/components/user-auth"
 import { LocalTime } from "@/components/local-time"
 import { ParticleLogo } from "@/components/particle-logo"
 import Link from "next/link"
-import { ArrowLeft, Search, ExternalLink, Wallet, Coins, AlertCircle } from "lucide-react"
+import { ArrowLeft, Search, ExternalLink, Wallet, Coins, AlertCircle, ArrowUpDown } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +18,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { API_KEYS, API_ENDPOINTS, getHeaders, buildBaseScanUrl } from "@/lib/api-config"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ExecutionContext } from '@cloudflare/workers-types'
 
 type ScanResult = {
   type: "wallet" | "token"
@@ -63,7 +65,7 @@ async function fetchSolanaWallet(address: string): Promise<ScanResult> {
     // Utiliser l'API SolScan pour obtenir les informations du compte
     const accountResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.ACCOUNT}/${address}`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
     });
     
     if (!accountResponse.ok) {
@@ -75,7 +77,7 @@ async function fetchSolanaWallet(address: string): Promise<ScanResult> {
     // Récupérer les transactions récentes
     const txResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TRANSACTIONS}/${address}?limit=5`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
     });
     
     let transactions: any[] = [];
@@ -125,7 +127,8 @@ async function fetchSolanaWallet(address: string): Promise<ScanResult> {
     };
   } catch (error) {
     console.error('Error fetching Solana wallet:', error);
-    throw error;
+    // Provide fallback data or handle the error appropriately
+    throw error; // Re-throw the error if you want to handle it elsewhere
   }
 }
 
@@ -135,7 +138,7 @@ async function fetchSolanaToken(address: string): Promise<ScanResult> {
     // Utiliser l'API SolScan pour obtenir les informations du token
     const tokenResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TOKEN}/${address}`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
     });
     
     if (!tokenResponse.ok) {
@@ -147,7 +150,7 @@ async function fetchSolanaToken(address: string): Promise<ScanResult> {
     // Récupérer les transferts récents du token
     const transfersResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TOKEN}/${address}/transfers?limit=5`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
     });
     
     let transfers: any[] = [];
@@ -159,7 +162,7 @@ async function fetchSolanaToken(address: string): Promise<ScanResult> {
     // Récupérer les métadonnées du token pour plus d'informations
     const metaResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TOKEN_META}/${address}`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
     });
     
     let tokenMeta: any = {};
@@ -170,7 +173,7 @@ async function fetchSolanaToken(address: string): Promise<ScanResult> {
     // Récupérer le nombre de holders
     const holdersResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TOKEN_HOLDERS}/${address}?limit=1&offset=0`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
     });
     
     let holdersData = { total: 0 };
@@ -468,7 +471,10 @@ async function fetchBaseToken(address: string): Promise<ScanResult> {
         if (possibleCoins.length > 0) {
           // Prendre le premier résultat correspondant
           const coinId = possibleCoins[0].id;
-          const coinDataResponse = await fetch(`${API_ENDPOINTS.COINGECKO.BASE_URL}${API_ENDPOINTS.COINGECKO.COIN_DATA}/${coinId}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`);
+          const coinDataResponse = await fetch(`${API_ENDPOINTS.COINGECKO.BASE_URL}${API_ENDPOINTS.COINGECKO.COIN_DATA}/${coinId}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`, {
+            method: 'GET',
+            headers: getHeaders(null, null, null)
+          });
           
           if (coinDataResponse.ok) {
             const coinData = await coinDataResponse.json();
@@ -536,7 +542,7 @@ async function checkWalletOwnsToken(walletAddress: string, tokenAddress: string,
       // Vérifier la possession du token sur Solana
       const tokenHoldingsResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}/account/tokens?account=${walletAddress}`, {
         method: 'GET',
-        headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+        headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
       });
       
       if (!tokenHoldingsResponse.ok) {
@@ -588,6 +594,10 @@ export function BlockchainScanner() {
   const [tokenToCheck, setTokenToCheck] = useState("")
   const [isTokenOwned, setIsTokenOwned] = useState<boolean | null>(null)
   const [isCheckingToken, setIsCheckingToken] = useState(false)
+  const [marketCapFilter, setMarketCapFilter] = useState<"small" | "all" | "large" | "medium" | "micro" | "nano" | "pico">("all")
+  const [platformFilter, setPlatformFilter] = useState<"all" | "Standard">("all")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [sortBy, setSortBy] = useState<"market_cap" | "price" | "name">("market_cap")
 
   // Charger les recherches récentes depuis le localStorage au chargement du composant
   useEffect(() => {
@@ -1178,4 +1188,18 @@ export function BlockchainScanner() {
       </footer>
     </div>
   )
+}
+
+export async function fetch(request: Request, env: any, ctx: ExecutionContext) {
+  // Your existing code here
+  return new Response("Hello World");
+}
+
+addEventListener('fetch', (event) => {
+  event.respondWith(handleRequest(event.request));
+});
+
+async function handleRequest(request: Request) {
+  // Your existing code here
+  return new Response("Hello World");
 }

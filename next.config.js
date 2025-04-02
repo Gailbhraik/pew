@@ -13,8 +13,42 @@ const nextConfig = {
       },
     ],
   },
-  // Ajouter trailingSlash pour éviter certains problèmes de routage
-  trailingSlash: true,
+  // Désactiver le trailing slash pour éviter les problèmes de routage
+  trailingSlash: false,
+  // Ajouter la configuration de redirections pour les pages
+  async redirects() {
+    return [
+      {
+        source: '/multi-charts/',
+        destination: '/multi-charts',
+        permanent: true,
+      },
+      {
+        source: '/dofus-map/',
+        destination: '/dofus-map',
+        permanent: true,
+      },
+      {
+        source: '/scanner/',
+        destination: '/scanner',
+        permanent: true,
+      },
+      {
+        source: '/pokemon/',
+        destination: '/pokemon',
+        permanent: true,
+      },
+    ]
+  },
+  // Configuration simplifiée des rewrites
+  async rewrites() {
+    return [
+      {
+        source: '/:path*',
+        destination: '/:path*',
+      },
+    ]
+  },
 }
 
-module.exports = nextConfig 
+module.exports = nextConfig
