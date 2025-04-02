@@ -712,27 +712,23 @@ export function BlockchainScanner() {
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div className="flex items-center gap-4">
-          <ParticleLogo />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Blockchain Scanner</h1>
-            <p className="text-muted-foreground mt-1">Explorez les wallets et tokens sur Solana et Base</p>
-          </div>
+      <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center space-x-2">
+          <Link 
+            href="/" 
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Retour
+          </Link>
+          <h1 className="text-3xl font-bold tracking-tight">Blockchain Scanner</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center space-x-2">
           <LocalTime />
           <ThemeToggle />
           <UserAuth />
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour au Tracker
-          </Link>
         </div>
-      </header>
+      </div>
 
       <div className="grid grid-cols-1 gap-6">
         <Card>
@@ -791,10 +787,15 @@ export function BlockchainScanner() {
                             placeholder={`Entrez l'adresse ${searchType === "wallet" ? "du wallet" : "du token"} Solana`}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyPress={handleKeyPress}
                           />
                           <Button
-                            onClick={() => handleSearch()}
+                            onClick={() => {
+                              setActiveTab("solana");
+                              handleSearch();
+                            }}
                             disabled={isLoading || !searchQuery}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
                           >
                             <Search className="h-4 w-4 mr-2" />
                             Rechercher
@@ -876,10 +877,15 @@ export function BlockchainScanner() {
                             placeholder={`Entrez l'adresse ${searchType === "wallet" ? "du wallet" : "du token"} Base`}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyPress={handleKeyPress}
                           />
                           <Button
-                            onClick={() => handleSearch()}
+                            onClick={() => {
+                              setActiveTab("base");
+                              handleSearch();
+                            }}
                             disabled={isLoading || !searchQuery}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
                           >
                             <Search className="h-4 w-4 mr-2" />
                             Rechercher

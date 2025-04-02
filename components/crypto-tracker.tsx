@@ -359,10 +359,22 @@ export default function CryptoTracker() {
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex space-x-2">
-            <Link href="/scanner" className="text-sm font-medium hover:underline">
+            <Link 
+              href="/" 
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              Accueil
+            </Link>
+            <Link 
+              href="/scanner" 
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
               Scanner
             </Link>
-            <Link href="/pokemon" className="text-sm font-medium hover:underline">
+            <Link 
+              href="/pokemon" 
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
               Pokémon
             </Link>
           </div>

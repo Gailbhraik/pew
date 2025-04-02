@@ -63,7 +63,10 @@ export default function PokemonTypesPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center space-x-2">
-          <Link href="/" className="flex items-center text-sm font-medium">
+          <Link 
+            href="/" 
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
             <ArrowLeft className="mr-1 h-4 w-4" />
             Retour
           </Link>
