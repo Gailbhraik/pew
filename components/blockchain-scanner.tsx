@@ -19,7 +19,6 @@ import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { API_KEYS, API_ENDPOINTS, getHeaders, buildBaseScanUrl } from "@/lib/api-config"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-// import { ExecutionContext } from 'some-library'; 
 import { ExecutionContext } from '@cloudflare/workers-types'
 
 type ScanResult = {
@@ -66,7 +65,7 @@ async function fetchSolanaWallet(address: string): Promise<ScanResult> {
     // Utiliser l'API SolScan pour obtenir les informations du compte
     const accountResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.ACCOUNT}/${address}`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
     });
     
     if (!accountResponse.ok) {
@@ -78,7 +77,7 @@ async function fetchSolanaWallet(address: string): Promise<ScanResult> {
     // Récupérer les transactions récentes
     const txResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TRANSACTIONS}/${address}?limit=5`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
     });
     
     let transactions: any[] = [];
@@ -139,7 +138,7 @@ async function fetchSolanaToken(address: string): Promise<ScanResult> {
     // Utiliser l'API SolScan pour obtenir les informations du token
     const tokenResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TOKEN}/${address}`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
     });
     
     if (!tokenResponse.ok) {
@@ -151,7 +150,7 @@ async function fetchSolanaToken(address: string): Promise<ScanResult> {
     // Récupérer les transferts récents du token
     const transfersResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TOKEN}/${address}/transfers?limit=5`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
     });
     
     let transfers: any[] = [];
@@ -163,7 +162,7 @@ async function fetchSolanaToken(address: string): Promise<ScanResult> {
     // Récupérer les métadonnées du token pour plus d'informations
     const metaResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TOKEN_META}/${address}`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
     });
     
     let tokenMeta: any = {};
@@ -174,7 +173,7 @@ async function fetchSolanaToken(address: string): Promise<ScanResult> {
     // Récupérer le nombre de holders
     const holdersResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}${API_ENDPOINTS.SOLSCAN.TOKEN_HOLDERS}/${address}?limit=1&offset=0`, {
       method: 'GET',
-      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+      headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
     });
     
     let holdersData = { total: 0 };
@@ -472,7 +471,10 @@ async function fetchBaseToken(address: string): Promise<ScanResult> {
         if (possibleCoins.length > 0) {
           // Prendre le premier résultat correspondant
           const coinId = possibleCoins[0].id;
-          const coinDataResponse = await fetch(`${API_ENDPOINTS.COINGECKO.BASE_URL}${API_ENDPOINTS.COINGECKO.COIN_DATA}/${coinId}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`);
+          const coinDataResponse = await fetch(`${API_ENDPOINTS.COINGECKO.BASE_URL}${API_ENDPOINTS.COINGECKO.COIN_DATA}/${coinId}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`, {
+            method: 'GET',
+            headers: getHeaders(null, null, null)
+          });
           
           if (coinDataResponse.ok) {
             const coinData = await coinDataResponse.json();
@@ -540,7 +542,7 @@ async function checkWalletOwnsToken(walletAddress: string, tokenAddress: string,
       // Vérifier la possession du token sur Solana
       const tokenHoldingsResponse = await fetch(`${API_ENDPOINTS.SOLSCAN.BASE_URL}/account/tokens?account=${walletAddress}`, {
         method: 'GET',
-        headers: getHeaders(API_KEYS.SOLSCAN_API_KEY)
+        headers: getHeaders(API_KEYS.SOLSCAN_API_KEY, null, null)
       });
       
       if (!tokenHoldingsResponse.ok) {

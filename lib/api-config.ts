@@ -44,7 +44,7 @@ export const API_ENDPOINTS = {
 };
 
 // Fonction pour générer les headers avec la clé API
-export function getHeaders(apiKey?: string) {
+export function getHeaders(apiKey?: string, context?: any, env?: any) {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
   };
