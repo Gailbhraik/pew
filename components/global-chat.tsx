@@ -7,6 +7,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MessageCircle, X, Send, Minimize, Maximize } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { onSnapshot } from 'firebase/firestore'
+import { messagesQuery, addDoc, serverTimestamp } from '@/lib/firebase'
 
 type Message = {
   id: string
@@ -90,17 +92,28 @@ export function GlobalChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  const handleSendMessage = () => {
+  useEffect(() => {
+    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+      const firebaseMessages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate()
+      }))
+      setMessages(firebaseMessages as Message[])
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  const handleSendMessage = async () => {
     if (newMessage.trim() === "") return
 
-    const newMsg: Message = {
-      id: Date.now().toString(),
+    await addDoc(messagesQuery, {
       content: newMessage,
       sender: user?.name || "Anonymous",
-      timestamp: new Date()
-    }
+      timestamp: serverTimestamp()
+    })
 
-    setMessages([...messages, newMsg])
     setNewMessage("")
   }
 
