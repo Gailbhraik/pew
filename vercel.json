@@ -1,9 +1,11 @@
 {
   "version": 2,
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
+    { "handle": "filesystem" },
+    { "src": "/multi-charts", "dest": "/multi-charts" },
+    { "src": "/dofus-map", "dest": "/dofus-map" },
+    { "src": "/scanner", "dest": "/scanner" },
+    { "src": "/pokemon", "dest": "/pokemon" },
+    { "src": "/(.*)", "dest": "/" }
   ]
 }
