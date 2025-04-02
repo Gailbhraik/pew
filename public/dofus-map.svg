@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="2000" height="2000" viewBox="0 0 2000 2000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fond de carte -->
+  <rect width="2000" height="2000" fill="#E5F0D5" />
+  
+  <!-- Océans et lacs -->
+  <path d="M0 0 L800 0 L900 200 L1200 300 L1500 200 L2000 400 L2000 0 Z" fill="#A4C8E1" />
+  <path d="M0 1800 L300 1700 L600 1800 L900 1750 L1200 1850 L1600 1800 L2000 1900 L2000 2000 L0 2000 Z" fill="#A4C8E1" />
+  <ellipse cx="600" cy="800" rx="200" ry="150" fill="#A4C8E1" />
+  <ellipse cx="1400" cy="1200" rx="250" ry="180" fill="#A4C8E1" />
+  
+  <!-- Forêts -->
+  <path d="M200 400 L500 350 L700 500 L600 700 L400 750 L200 600 Z" fill="#7AAD5D" />
+  <path d="M1200 500 L1500 450 L1700 600 L1600 800 L1400 850 L1200 700 Z" fill="#7AAD5D" />
+  <path d="M800 1400 L1100 1350 L1300 1500 L1200 1700 L1000 1750 L800 1600 Z" fill="#7AAD5D" />
+  
+  <!-- Montagnes -->
+  <path d="M300 900 L500 800 L700 900 L600 1100 L400 1150 L200 1000 Z" fill="#B3A592" />
+  <path d="M1300 300 L1500 200 L1700 300 L1600 500 L1400 550 L1200 400 Z" fill="#B3A592" />
+  
+  <!-- Plaines -->
+  <path d="M800 600 L1100 550 L1300 700 L1200 900 L1000 950 L800 800 Z" fill="#D6E89F" />
+  <path d="M400 1400 L700 1350 L900 1500 L800 1700 L600 1750 L400 1600 Z" fill="#D6E89F" />
+  
+  <!-- Rivières -->
+  <path d="M600 800 L700 900 L800 950 L900 1000 L1000 1100 L1100 1150 L1200 1200 L1300 1180 L1400 1200" stroke="#A4C8E1" stroke-width="20" fill="none" />
+  <path d="M1400 200 L1300 300 L1200 400 L1100 500 L1000 600 L900 700 L800 800 L700 850 L600 800" stroke="#A4C8E1" stroke-width="20" fill="none" />
+  
+  <!-- Routes -->
+  <path d="M200 1200 L400 1150 L600 1200 L800 1250 L1000 1200 L1200 1250 L1400 1200 L1600 1250 L1800 1200" stroke="#D2B48C" stroke-width="10" fill="none" />
+  <path d="M1000 200 L950 400 L1000 600 L950 800 L1000 1000 L950 1200 L1000 1400 L950 1600 L1000 1800" stroke="#D2B48C" stroke-width="10" fill="none" />
+  
+  <!-- Villes principales -->
+  <circle cx="500" cy="500" r="40" fill="#E8C39E" stroke="#8B4513" stroke-width="5" />
+  <circle cx="1500" cy="700" r="40" fill="#E8C39E" stroke="#8B4513" stroke-width="5" />
+  <circle cx="800" cy="1200" r="40" fill="#E8C39E" stroke="#8B4513" stroke-width="5" />
+  <circle cx="1200" cy="1600" r="40" fill="#E8C39E" stroke="#8B4513" stroke-width="5" />
+  
+  <!-- Noms des régions -->
+  <text x="500" y="500" font-family="Arial" font-size="40" fill="#333" text-anchor="middle">Amakna</text>
+  <text x="1500" y="700" font-family="Arial" font-size="40" fill="#333" text-anchor="middle">Bonta</text>
+  <text x="800" y="1200" font-family="Arial" font-size="40" fill="#333" text-anchor="middle">Cania</text>
+  <text x="1200" y="1600" font-family="Arial" font-size="40" fill="#333" text-anchor="middle">Sufokia</text>
+</svg>
