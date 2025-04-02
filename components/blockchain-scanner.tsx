@@ -10,7 +10,7 @@ import { UserAuth } from "@/components/user-auth"
 import { LocalTime } from "@/components/local-time"
 import { ParticleLogo } from "@/components/particle-logo"
 import Link from "next/link"
-import { ArrowLeft, Search, ExternalLink, Wallet, Coins, AlertCircle } from "lucide-react"
+import { ArrowLeft, Search, ExternalLink, Wallet, Coins, AlertCircle, ArrowUpDown } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { API_KEYS, API_ENDPOINTS, getHeaders, buildBaseScanUrl } from "@/lib/api-config"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 type ScanResult = {
   type: "wallet" | "token"
@@ -588,6 +589,10 @@ export function BlockchainScanner() {
   const [tokenToCheck, setTokenToCheck] = useState("")
   const [isTokenOwned, setIsTokenOwned] = useState<boolean | null>(null)
   const [isCheckingToken, setIsCheckingToken] = useState(false)
+  const [marketCapFilter, setMarketCapFilter] = useState<"small" | "all" | "large" | "medium" | "micro" | "nano" | "pico">("all")
+  const [platformFilter, setPlatformFilter] = useState<"all" | "Standard">("all")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [sortBy, setSortBy] = useState<"market_cap" | "price" | "name">("market_cap")
 
   // Charger les recherches récentes depuis le localStorage au chargement du composant
   useEffect(() => {
