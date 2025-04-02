@@ -1,10 +1,5 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/api/revalidate", "dest": "/api/revalidate" },
-    { "src": "/(.*)", "dest": "/$1" }
-  ]
+  "outputDirectory": ".next"
 }
