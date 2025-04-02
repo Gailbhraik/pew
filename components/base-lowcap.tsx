@@ -543,7 +543,7 @@ export function BaseLowcap() {
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-blue-200 dark:bg-blue-800 rounded-full flex items-center justify-center text-xs font-bold">
-                        {crypto.symbol?.substring(0, 2).toUpperCase()}
+                        {crypto.symbol ? crypto.symbol.substring(0, 2).toUpperCase() : ""}
                       </div>
                       <div>
                         <CardTitle className="text-base">{crypto.name}</CardTitle>
